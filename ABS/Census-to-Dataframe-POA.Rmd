@@ -1,0 +1,1364 @@
+---
+title: "Census to Dataframe"
+author: "Jeremy Forbes"
+date: "07/03/2018"
+output: html_document
+---
+
+---
+NOTE:
+- Population for each question is different based on what data is available across years. Often the population does not match that in the question.
+- Metric definitions are consistent across 2001 and 2006.
+
+
+NAs:
+Need to find out which POAs can be removed.
+- DeFacto: There are NAs generated due to missing data for 10 post codes. These are due to all zeros.
+- Housing: 12 NAs due to zeros
+- Medians: 23 NAs due to actual NAs
+
+---
+
+This markdown, when run, builds two data frames. One holding metrics relating to the 2001 Census, and one for the 2006 Census. It draws on the following files that are imported (sometimes within loops).
+
+Census Community Profiles: must be downloaded and unzipped using the "Download-Unzip-CensusData-POA.Rmd"
+
+Post codes index (POA) - POA_2001 and POA_2006 are created in "Postcode-Download-Unzip-CensusData.Rmd"
+
+Each chunk is this file accesses a different sheet in the raw data .xls file, and each sheet may contain information relevant to multiple questions.
+
+# Extract information from relevant sheets, for each POA
+
+```{r}
+library(dplyr)
+library(readxl)
+library(stringr)
+```
+
+
+Create blank df for values
+```{r blank_df, echo=FALSE}
+POA_abs2001 <- data.frame(POA = POA_2001$POA, Population = 0, Area = 0, MedianPersonalIncome = 0, Unemployed = 0, LFParticipation = 0, Bachelor = 0, Postgraduate = 0, Christianity = 0, Catholic = 0, Buddhism = 0, Islam = 0, Judaism = 0, NoReligion = 0, Age00_04 = 0, Age05_14 = 0, Age15_19 = 0, Age20_24 = 0, Age25_34 = 0, Age35_44 = 0, Age45_54 = 0, Age55_64 = 0, Age65_74 = 0, Age75_84 = 0, Age85plus = 0, BornOverseas = 0, Indigenous = 0, EnglishOnly = 0, OtherLanguageHome = 0, Married = 0, DeFacto = 0, FamilyRatio = 0, CurrentlyStudying = 0, HighSchool = 0, InternetUse = 0, InternetAccess = 0, AusCitizen = 0, AverageHouseholdSize = 0, MedianHouseholdIncome = 0, MedianFamilyIncome = 0, MedianRent = 0, MedianLoanPay = 0, MedianAge = 0, EmuneratedElsewhere = 0, Volunteer = 0, PersonalIncome_NS = 0, FamilyIncome_NS = 0, HouseholdIncome_NS = 0, Rent_NS = 0, Religion_NS = 0, BornOverseas_NS = 0, Language_NS = 0, Tenure_NS = 0, HighSchool_NS = 0, InternetUse_NS = 0, University_NS = 0, Volunteer_NS = 0, InternetAccess_NS = 0, SP_House = 0, Couple_NoChild_House = 0, OneParent_House = 0, Couple_WChild_House = 0, Owned = 0, Mortgage = 0, Renting = 0, PublicHousing = 0, Born_UK = 0, Born_SE_Europe = 0, Born_MidEast = 0, Born_Asia = 0, DiffAddress = 0, Extractive = 0, Transformative = 0, Distributive = 0, Finance = 0, SocialServ = 0, ManagerAdminClericalSales = 0, Professional = 0, Tradesperson = 0, Laborer = 0, DipCert = 0, Anglican = 0, OtherChrist = 0, Other_NonChrist = 0)
+#includes new categories
+
+
+POA_abs2006 <- data.frame(POA = POA_2006$POA, Population = 0, Area = 0, MedianPersonalIncome = 0, Unemployed = 0, LFParticipation = 0, Bachelor = 0, Postgraduate = 0, Christianity = 0, Catholic = 0, Buddhism = 0, Islam = 0, Judaism = 0, NoReligion = 0, Age00_04 = 0, Age05_14 = 0, Age15_19 = 0, Age20_24 = 0, Age25_34 = 0, Age35_44 = 0, Age45_54 = 0, Age55_64 = 0, Age65_74 = 0, Age75_84 = 0, Age85plus = 0, BornOverseas = 0, Indigenous = 0, EnglishOnly = 0, OtherLanguageHome = 0, Married = 0, DeFacto = 0, FamilyRatio = 0, CurrentlyStudying = 0, HighSchool = 0, InternetUse = 0, InternetAccess = 0, AusCitizen = 0, AverageHouseholdSize = 0, MedianHouseholdIncome = 0, MedianFamilyIncome = 0, MedianRent = 0, MedianLoanPay = 0, MedianAge = 0, EmuneratedElsewhere = 0, Volunteer = 0, PersonalIncome_NS = 0, FamilyIncome_NS = 0, HouseholdIncome_NS = 0, Rent_NS = 0, Religion_NS = 0, BornOverseas_NS = 0, Language_NS = 0, Tenure_NS = 0, HighSchool_NS = 0, InternetUse_NS = 0, University_NS = 0, Volunteer_NS = 0, InternetAccess_NS = 0, SP_House = 0, Couple_NoChild_House = 0, OneParent_House = 0, Couple_WChild_House = 0, Owned = 0, Mortgage = 0, Renting = 0, PublicHousing = 0, Born_UK = 0, Born_SE_Europe = 0, Born_MidEast = 0, Born_Asia = 0, DiffAddress = 0, Extractive = 0, Transformative = 0, Distributive = 0, Finance = 0, SocialServ = 0, ManagerAdminClericalSales = 0, Professional = 0, Tradesperson = 0, Laborer = 0, DipCert = 0, Anglican = 0, OtherChrist = 0, Other_NonChrist = 0)
+```
+
+```{r}
+# POA lists
+POA_2001 <- data.frame(POA = list.files("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Zipped") %>% substr(4, 7))
+POA_2006 <- data.frame(POA = list.files("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Zipped") %>% substr(4, 7))
+
+```
+
+
+# Renaming files to remove state in name (for easier coding)
+```{r}
+#files_06 <- list.files("/Users/Jeremy/Documents/R/ABS/2001_2006/ABS2006/POA_Unzipped")
+#index_06 <- which(startsWith(files_06, "20010"))
+#files_06[index_06] <- substr(files_06[which(startsWith(files_06, "20010"))], 1, 14)
+
+#for (i in 1:length(index_06)) {
+#  file.rename(
+#    from = paste0("/Users/Jeremy/Documents/R/ABS/2001_2006/ABS2006/POA_Unzipped/", #list.files("/Users/Jeremy/Documents/R/ABS/2001_2006/ABS2006/POA_Unzipped")[index_06[i]]),
+#    to = paste0("/Users/Jeremy/Documents/R/ABS/2001_2006/ABS2006/POA_Unzipped/", files_06[index_06[i]], ".xls"))
+#}
+```
+
+
+# 2001
+Each of the following chunks corresponds with a particular sheet, which may have numerous metrics derived from it. 
+
+hist(rowSums(POA_abs2001[, 11:25]))
+
+B 01
+
+```{r B_01_2001, echo=FALSE}
+sheet_ref <- "B 01"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+df <- read_excel(excel_ref, sheet = sheet_ref)[, c(1,4)]
+
+a <- as.character(df[1,1], " ")
+
+df <- df %>%
+  na.omit() %>%
+  mutate_if(is.factor, as.character) %>%
+  as.data.frame()
+
+colnames(df) = c("Category", "Number")
+df$Number <- as.numeric(df$Number)
+
+total = df[which(startsWith(df$Category,"Total person")), 2] # total people
+#overseas = df[which(startsWith(df$Category,"Overseas")), 2] # overseas visitors
+popl = total # includes overseas visitors
+
+
+#Metrics
+POA_abs2001$Area[i] = as.numeric(strsplit(a, " ")[[1]][lengths(strsplit(a, " ")) - 2])
+
+POA_abs2001$Population[i] = popl
+
+POA_abs2001$BornOverseas[i] = (df[9,2]/(df[8,2]+df[9,2]))*100 #removed not stated implicitly
+
+POA_abs2001$Indigenous[i] = ((df[4,2]+df[5,2]+df[6,2])/popl)*100
+
+POA_abs2001$EnglishOnly[i] = (df[10,2]/(df[10,2]+df[11,2]))*100 #removed not stated implicitly
+
+POA_abs2001$OtherLanguageHome[i] = 100 - as.numeric(POA_abs2001$EnglishOnly[i])
+
+POA_abs2001$AusCitizen[i] = (df[13,2]/popl)*100
+
+POA_abs2001$EmuneratedElsewhere[i] = (df[16,2]/popl)*100 
+}
+
+POA_abs2001$Population <- unlist(POA_abs2001$Population) # coerce non-list
+POA_abs2001$BornOverseas <- unlist(POA_abs2001$BornOverseas)
+POA_abs2001$Indigenous <- unlist(POA_abs2001$Indigenous)
+POA_abs2001$EnglishOnly <- unlist(POA_abs2001$EnglishOnly)
+POA_abs2001$AusCitizen <- unlist(POA_abs2001$AusCitizen)
+```
+
+
+```{r B_03_2001, echo=FALSE}
+sheet_ref <- "B 03"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref) %>% 
+  as.matrix()
+
+df <- rbind(df[,c(1,4)], df[,c(6,9)], df[,c(11,14)]) %>%
+  na.omit() %>%
+  as.data.frame() %>%
+  mutate_if(is.factor, as.character)
+
+colnames(df) <- c("Category", "Number")
+df$Number <- as.numeric(df$Number)
+
+total = df[which(df$Category == "Total"), 2] # total people
+overseas = df[which(startsWith(df$Category,"Overseas")), 2] # overseas visitors
+popl = total - overseas # excludes overseas visitors
+
+df <- df %>%
+  filter(str_detect(Category, "-") | str_detect(Category, "over")) %>%
+  mutate(percent = Number/popl)
+
+#Metrics
+POA_abs2001$Age00_04[i] = df %>%
+  filter(Category %in% c("0-4")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age05_14[i] = df %>%
+  filter(Category %in% c("5-9","10-14")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age15_19[i] = df %>%
+  filter(Category %in% c("15-19")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age20_24[i] = df %>%
+  filter(Category %in% c("20-24")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+  
+POA_abs2001$Age25_34[i] = df %>%
+  filter(Category %in% c("25-29","30-34")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age35_44[i] = df %>%
+  filter(Category %in% c("35-39","40-44")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age45_54[i] = df %>%
+  filter(Category %in% c("45-49","50-54")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age55_64[i] = df %>%
+  filter(Category %in% c("55-59","60-64")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age65_74[i] = df %>%
+  filter(Category %in% c("65-69","70-74")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age75_84[i] = df %>%
+  filter(Category %in% c("75-79","80-84")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+POA_abs2001$Age85plus[i] = df %>%
+  filter(Category %in% c("85-89","90-94","95-99","100 years and over")) %>%
+  select(percent) %>%
+  sum() %>%
+  prod(100)
+
+}
+
+POA_abs2001$Age00_04 <- unlist(POA_abs2001$Age00_04) # coerce to avoid list
+
+#test <- rowSums(POA_abs2001[15:25]) # unsure totals 1
+#summary(test)
+```
+
+
+B_04
+```{r B_04_2001, echo=FALSE}
+sheet_ref <- "B 04"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+#Married
+POA_abs2001$Married[i] = ((as.numeric(df[26,2]) + as.numeric(df[26,3]) - as.numeric(df[24,2]) - as.numeric(df[24,3])) / (as.numeric(df[26,19]) - as.numeric(df[24,19]))) * 100 # remove overseas visitors
+}
+```
+
+---
+Check that I'm consistent with SE Europe definition. Is it south or eastern europe? or South-eastern? Check stimson and other years. 
+
+It is Southern, Eastern and South Eastern.
+---
+
+B 07A and B 07B
+```{r B_04_2001, echo=FALSE}
+sheet_ref <- "B 07A"
+sheet_refB <- "B 07B"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- rbind(read_excel(excel_ref, sheet = sheet_ref),read_excel(excel_ref, sheet = sheet_refB))[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`)) %>%
+  na.omit()
+
+colnames(df) = c("Type","Persons")
+df$Persons <- as.numeric(df$Persons)
+
+popl = df$Persons[44] - df$Persons[42] # only respondents, includes overseas visitors
+
+#Birthplace
+POA_abs2001$Born_MidEast[i] = (df$Persons[17] / popl) * 100
+
+POA_abs2001$Born_SE_Europe[i] = (df$Persons[14] / popl) * 100
+  
+POA_abs2001$Born_UK[i] = (df$Persons[5] / popl) * 100
+
+POA_abs2001$Born_Asia[i] = (df$Persons[which(df$Type == "Middle East")] / popl) * 100
+}
+```
+
+B 10
+```{r B_10_2001, echo=FALSE}
+sheet_ref <- "B 10"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[35] - df$Persons[34] - df$Persons[33] # excludes overseas and not stated
+
+#Metric
+POA_abs2001$Christianity[i] = (df$Persons[23]/popl)*100
+POA_abs2001$Catholic[i] = (df$Persons[9]/popl)*100
+POA_abs2001$Anglican[i] = (df$Persons[6]/popl)*100
+
+POA_abs2001$OtherChrist[i] = ((df$Persons[23] - df$Persons[9] - df$Persons[6])/popl)*100
+
+POA_abs2001$Buddhism[i] = (df$Persons[4]/popl)*100
+POA_abs2001$Islam[i] = (df$Persons[25]/popl)*100
+POA_abs2001$Judaism[i] = (df$Persons[26]/popl)*100
+
+POA_abs2001$NoReligion[i] = (df$Persons[31]/popl)*100
+
+POA_abs2001$Religion_NS[i] = (df$Persons[33] / (popl + df$Persons[33]))*100 # denominator is total population who responded and did not
+
+POA_abs2001$Other_NonChrist[i] = 100 - POA_abs2001$NoReligion[i] - POA_abs2001$Christianity[i] #Non Christian and not no religion
+}
+```
+
+
+B 11
+Currently Studying
+Have not removed not stated because this is not available in 2016.
+```{r B_11_2001, echo=FALSE}
+sheet_ref <- "B 11"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[33] - df$Persons[32] # excludes overseas (but includes not stated)
+
+#Metric
+POA_abs2001$CurrentlyStudying[i] = (1 - (df$Persons[30]/popl)) * 100 # percentage of people who are neither "not attending". Not stated is included in denominator because it is not available in 2016.
+}
+```
+
+B 12
+```{r B_12_2001, echo=FALSE}
+sheet_ref <- "B 12"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[12] - df$Persons[11] #people aged 15+, remove not stated
+
+#Percentage of total population that have finished high school
+POA_abs2001$HighSchool[i] = (df$Persons[8]/popl) * 100
+POA_abs2001$HighSchool_NS[i] = (df$Persons[11] / df$Persons[12])*100 #not stated out of the over 15 population
+}
+```
+
+B 14
+```{r B_14_2001, echo=FALSE}
+sheet_ref <- "B 14"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[42:59,c(1,10)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[13] - df$Persons[12] # excludes overseas visitors
+
+#Percentage of total population are in a DeFacto marriage
+POA_abs2001$DeFacto[i] = (df$Persons[2]/popl) * 100
+}
+```
+There are NAs generated due to missing data for 10 post codes. These are due to all zeros.
+
+
+B 16
+```{r B_16_2001, echo=FALSE}
+sheet_ref <- "B 16"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[16] - df$Persons[15] - df$Persons[14] # remove not stated and overseas visitors
+
+#Percentage of total population that used internet in last week
+POA_abs2001$InternetUse[i] = (df$Persons[12]/popl) * 100
+}
+```
+
+B 17
+```{r B_17_2001, echo=FALSE}
+sheet_ref <- "B 17"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,2,6)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type","Families","Persons")
+df$Persons = as.numeric(df$Persons)
+df$Families = as.numeric(df$Families)
+
+num_fam = df$Families[24] # total number of families
+
+#Family ratio = people / families
+POA_abs2001$FamilyRatio[i] = ifelse(num_fam != 0,
+  (df$Persons[24]/num_fam), NA)
+  
+# Couple without children household
+POA_abs2001$Couple_NoChild_House[i] = (df$Families[13]/num_fam)*100
+
+# One parent family household
+POA_abs2001$OneParent_House[i] = (df$Families[22]/num_fam)*100
+
+# Couples with children household
+POA_abs2001$Couple_WChild_House[i] = (df$Families[12]/num_fam)*100
+}
+```
+
+B 19
+```{r B_19_2001, echo=FALSE}
+sheet_ref <- "B 19"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,1:11]
+
+tot_houses <- as.numeric(df[19,11]) - as.numeric(df[19,10]) # excludes not stated
+
+# Housing
+POA_abs2001$Tenure_NS[i] = (as.numeric(df[19,10]) / as.numeric(df[19,11]))*100 
+
+POA_abs2001$Owned[i] = (as.numeric(df[19,2])/tot_houses) * 100 #fully owned
+
+POA_abs2001$Mortgage[i] = ((as.numeric(df[19,3])+as.numeric(df[19,4]))/tot_houses) * 100 #being purchased (mortgage)
+
+POA_abs2001$Renting[i] = (as.numeric(df[19,8])/tot_houses) * 100 #rented
+
+POA_abs2001$PublicHousing[i] = (as.numeric(df[19,5])/tot_houses) * 100 # rented from housing authority
+
+}
+```
+
+B 22
+```{r B_22_2001, echo=FALSE}
+sheet_ref <- "B 22"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Number")
+df$Number = as.numeric(df$Number)
+
+#Unemployment Rate
+POA_abs2001$Unemployed[i] = df$Number[12] * 100 #Unemployed / Labour Force
+
+# Labor force participation
+POA_abs2001$LFParticipation[i] = df$Number[10]/(df$Number[10]+df$Number[11]) * 100 #LF participation rate
+
+# Same address as 5 years ago
+POA_abs2001$DiffAddress[i] = df$Number[16]/(df$Number[15]+df$Number[16]) * 100 #Unemployed / Labour Force
+
+}
+```
+
+B 23
+```{r B_23_2001, echo=FALSE}
+sheet_ref <- "B 23"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl_15plus <- POA_abs2001$Population[i]*(100  - POA_abs2001$Age00_04[i] - POA_abs2001$Age05_14[i] - POA_abs2001$Age15_19[i])/100 #population aged 15+
+popl <- popl_15plus - df$Persons[9] #Excludes not stated from total pop over 15
+
+#Bachelor and Postgraduate
+POA_abs2001$Bachelor[i] = (df$Persons[6] / popl) * 100
+POA_abs2001$Postgraduate[i] = (df$Persons[4] / popl) * 100
+POA_abs2001$University_NS[i] = (df$Persons[9] / (popl_15plus) )*100 #not stated (includes inadequately described) out of age 15+
+
+# Diploma or Certificate
+POA_abs2001$DipCert[i] = ((df$Persons[5] + df$Persons[7] + df$Persons[8]) / popl) * 100
+}
+```
+
+B 26B
+```{r}
+sheet_ref <- "B 26B"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl <- df$Persons[23] - df$Persons[22] # excludes not stated
+
+# Industry of employment
+POA_abs2001$Extractive[i] = ((df$Persons[4] + df$Persons[5] + df$Persons[7]) / popl) * 100 # agriculture, mining, electricity
+POA_abs2001$Transformative[i] = ((df$Persons[6] + df$Persons[8]) / popl) * 100 # Manufacturing, construction
+POA_abs2001$Distributive[i] = ((df$Persons[9] + df$Persons[10] + df$Persons[12]) / popl) * 100 # Wholesale and retail trade, Transport and storage
+POA_abs2001$Finance[i] = (df$Persons[14] / popl) * 100 # Finance
+POA_abs2001$SocialServ[i] = ((df$Persons[17] + df$Persons[18] + df$Persons[19]) / popl) * 100 # Education, Health, Cultural
+}
+
+```
+
+B 27B
+```{r}
+sheet_ref <- "B 27B"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,9)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl <- df$Persons[15] - df$Persons[14] - df$Persons[13] # excludes not stated and inadequately described
+
+# Occupation 
+POA_abs2001$ManagerAdminClericalSales[i] = ((df$Persons[4] + df$Persons[8] + df$Persons[9] + df$Persons[11]) / popl) * 100
+POA_abs2001$Professional[i] = ((df$Persons[5]) / popl) * 100
+POA_abs2001$Tradesperson[i] = (df$Persons[7] / popl) * 100
+POA_abs2001$Laborer[i] = (df$Persons[12] / popl) * 100
+
+}
+
+```
+
+B 32
+```{r}
+sheet_ref <- "B 32"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref) %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+# Single person household (% of households)
+POA_abs2001$SP_House[i] = (as.numeric(df[10,7])/as.numeric(df[17,7])) * 100
+}
+
+```
+
+
+B 33
+This deals with medians, which only have ranges - decided to use midpoint of range
+```{r B_33_2001, echo=FALSE}
+sheet_ref <- "B 33"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref) %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+
+#All Medians are weekly
+#Median Income
+a <- strsplit(df$Persons[6], "-")
+min <- substr(a[[1]][1], 2, nchar(a[[1]][1]))
+min <- sub(",", "", min)
+max <- substr(a[[1]][2], 2, nchar(a[[1]][1]))
+max <- sub(",", "", max)
+POA_abs2001$MedianPersonalIncome[i] = (as.numeric(min)+as.numeric(max))/2
+
+#Median HouseHoldSize
+POA_abs2001$AverageHouseholdSize[i] = as.numeric(df[9,2])
+
+#Median FamilyIncome
+a <- strsplit(df$Persons[7][[1]], "-")
+min <- substr(a[[1]][1], 2, nchar(a[[1]][1]))
+min <- sub(",", "", min)
+max <- substr(a[[1]][2], 2, nchar(a[[1]][1]))
+max <- sub(",", "", max)
+POA_abs2001$MedianFamilyIncome[i] = (as.numeric(min)+as.numeric(max))/2
+
+#Median HouseholdIncome
+a <- strsplit(df$Persons[8][[1]], "-")
+min <- substr(a[[1]][1], 2, nchar(a[[1]][1]))
+min <- sub(",", "", min)
+max <- substr(a[[1]][2], 2, nchar(a[[1]][1]))
+max <- sub(",", "", max)
+POA_abs2001$MedianHouseholdIncome[i] = (as.numeric(min)+as.numeric(max))/2
+
+#Median Rent
+a <- strsplit(df$Persons[5][[1]], "-")
+min <- substr(a[[1]][1], 2, nchar(a[[1]][1]))
+min <- sub(",", "", min)
+max <- substr(a[[1]][2], 2, nchar(a[[1]][1]))
+max <- sub(",", "", max)
+POA_abs2001$MedianRent[i] = (as.numeric(min)+as.numeric(max))/2
+
+#Median HousingLoanPayments
+a <- strsplit(df$Persons[4][[1]], "-")
+min <- substr(a[[1]][1], 2, nchar(a[[1]][1]))
+min <- sub(",", "", min)
+max <- substr(a[[1]][2], 2, nchar(a[[1]][1]))
+max <- sub(",", "", max)
+POA_abs2001$MedianLoanPay[i] = (as.numeric(min)+as.numeric(max))/2
+
+#Median Age
+POA_abs2001$MedianAge[i] = as.numeric(df$Persons[3])
+}
+```
+
+Additional sheets - determine percentage of population that are not answering the question.
+```{r}
+#BornOverseas
+sheet_ref <- "B 06"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[38] - df$Persons[37] # excludes overseas visitors
+
+POA_abs2001$BornOverseas_NS[i] = (df$Persons[36] / popl)*100
+}
+
+#Language_NS
+sheet_ref <- "B 08"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[44] - df$Persons[43] # excludes overseas visitors
+
+POA_abs2001$Language_NS[i] = (df$Persons[42] / popl)*100
+}
+
+#PersonalIncome_NS
+sheet_ref <- "B 13B"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,10)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = df$Persons[21] - df$Persons[20] #excludes overseas visitors
+
+POA_abs2001$PersonalIncome_NS[i] = (df$Persons[19]/popl)*100
+}
+
+#InternetUse_NS
+sheet_ref <- "B 16"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+POA_abs2001$InternetUse_NS[i] = (df$Persons[14] / (df$Persons[15] + df$Persons[16]))*100
+}
+
+#Rent_NS
+sheet_ref <- "B 21"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,6)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+POA_abs2001$Rent_NS[i] = (df$Persons[14]/df$Persons[15])*100
+}
+
+#FamilyIncome_NS
+sheet_ref <- "B 30"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,6)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+POA_abs2001$FamilyIncome_NS[i] = ((df$Persons[17] + df$Persons[18]) / df$Persons[19])*100 #includes some incomes not stated and all incomes not stated
+}
+
+#HouseholdIncome_NS
+sheet_ref <- "B 31"
+
+for (i in 1:nrow(POA_2001)) {
+POA <- POA_2001$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = as.numeric(df$Persons)
+
+popl = POA_abs2001$Population[i]
+
+POA_abs2001$HouseholdIncome_NS[i] = ((df$Persons[17] + df$Persons[18]) / df$Persons[19])*100 #includes some incomes not stated and all incomes not stated #includes some incomes not stated and all incomes not stated
+}
+```
+
+## Removing postcodes that aren't real areas
+```{r rmv}
+faux01 = which(POA_abs2001$Area == 0)
+#POA_abs2001$POA[faux01] # to print the POAs
+
+test <- POA_abs2001[-faux01,]
+
+test$POA[which(is.na(test$Couple_NoChild_House))]
+test$POA[which(is.na(test$SP_House))]
+# NAs here are systematic for any "dwelling" questions
+
+test$POA[which(test$Other_NonChrist < 0)]
+```
+
+NAs in: Tenure HouseholdIncome Rent NS, SP_House
+
+
+# 2006
+
+Each of the following chunks corresponds with a particular sheet, which may have numerous metrics derived from it. 
+
+B 01a
+```{r B_01a_2006, echo=FALSE}
+sheet_ref <- "B 01a"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+#Metrics
+POA_abs2006$Area[i] = as.numeric(strsplit(strsplit(df[1,1][[1]], ") ")[[1]][2], " sq")[[1]][1])
+
+df <- df[,c(1,4)]  %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+
+colnames(df) = c("Type","Persons")
+df$Persons <- suppressWarnings(as.numeric(df$Persons))
+
+popl = max(df$Persons[which(df$Type == "Total persons")], sum(df[7:17,2])) #includes overseas visitors and 
+
+POA_abs2006$Population[i] = popl
+
+POA_abs2006$BornOverseas[i] = (df$Persons[28]/(df$Persons[27]+df$Persons[28]))*100 #not stated implicitly excluded
+
+POA_abs2006$Indigenous[i] = (df$Persons[25]/popl)*100
+
+POA_abs2006$EnglishOnly[i] = (df$Persons[30]/(df$Persons[30]+df$Persons[31]))*100 #not stated implicitly excluded
+
+POA_abs2006$OtherLanguageHome[i] = 100 - POA_abs2006$EnglishOnly[i]
+
+POA_abs2006$AusCitizen[i] = min((df$Persons[32]/popl)*100, 100) # truncated at 100 due to raw data giving some values exceeding 100% (marginally)
+}
+```
+
+B 02
+```{r B_02_2006, echo=FALSE}
+sheet_ref <- "B 02"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref) %>%
+  as.matrix()
+
+df <- rbind(df[,c(1,2)], df[,c(4,5)]) %>%
+  as.data.frame() %>%
+  mutate_if(is.factor, as.character) %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+
+colnames(df) <- c("Category", "Number")
+df$Number <- as.numeric(df$Number)
+
+#All Medians are weekly
+POA_abs2006$MedianPersonalIncome[i] = df$Number[5]
+
+POA_abs2006$AverageHouseholdSize[i] = df$Number[23]
+
+POA_abs2006$MedianHouseholdIncome[i] = df$Number[7]
+
+POA_abs2006$MedianFamilyIncome[i] = df$Number[6]
+
+POA_abs2006$MedianRent[i] = df$Number[21]
+
+POA_abs2006$MedianLoanPay[i] = df$Number[20]
+
+#Median Age
+POA_abs2006$MedianAge[i] = df$Number[4]
+}
+```
+
+B 04
+```{r B_04_2006, echo=FALSE}
+sheet_ref <- "B 04"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+popl = as.numeric(df[41,14])
+
+#Metrics
+POA_abs2006$Age00_04[i] = (as.numeric(df[16,4])/popl)*100
+
+POA_abs2006$Age05_14[i] = ((as.numeric(df[22,4])+as.numeric(df[28,4]))/popl)*100
+
+POA_abs2006$Age15_19[i] = (as.numeric(df[34,4])/popl)*100
+
+POA_abs2006$Age20_24[i] = (as.numeric(df[40,4])/popl)*100
+
+POA_abs2006$Age25_34[i] = ((as.numeric(df[46,4])+as.numeric(df[16,9]))/popl)*100
+
+POA_abs2006$Age35_44[i] = ((as.numeric(df[22,9])+as.numeric(df[28,9]))/popl)*100
+
+POA_abs2006$Age45_54[i] = ((as.numeric(df[34,9])+as.numeric(df[40,9]))/popl)*100
+
+POA_abs2006$Age55_64[i] = ((as.numeric(df[46,9])+as.numeric(df[16,14]))/popl)*100
+
+POA_abs2006$Age65_74[i] = ((as.numeric(df[22,14])+as.numeric(df[28,14]))/popl)*100
+
+POA_abs2006$Age75_84[i] = ((as.numeric(df[34,14])+as.numeric(df[35,14]))/popl)*100
+
+POA_abs2006$Age85plus[i] = ((as.numeric(df[36,14])+as.numeric(df[37,14])+as.numeric(df[38,14])+as.numeric(df[39,14]))/popl)*100
+}
+
+#test <- rowSums(POA_abs2006[15:25])
+```
+
+B 06
+```{r B_06_2006, echo=FALSE}
+sheet_ref <- "B 06"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+question_popl = as.numeric(df[49,5])
+
+#Percentage of DeFacto
+POA_abs2006$DeFacto[i] = (as.numeric(df[49,3])/question_popl) * 100
+POA_abs2006$Married[i] = (as.numeric(df[49,2])/question_popl) * 100
+}
+```
+
+B 09
+```{r B_09_2006, echo=FALSE}
+sheet_ref <- "B 09"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`)) %>%
+  na.omit()
+
+colnames(df) <- c("Country", "Persons")
+df$Persons <- as.numeric(df$Persons)
+
+popl = df$Persons[which(df$Country == "Total")] - df$Persons[which(df$Country == "Country of birth not stated")] # excludes not stated
+
+#Birthplace
+POA_abs2006$Born_MidEast[i] = (sum(df$Persons[which(df$Country %in% 
+                                                 c("Egypt", "Iraq", "Lebanon", "Turkey")
+                                               )]) / popl)*100
+
+POA_abs2006$Born_SE_Europe[i] = (sum(df$Persons[which(df$Country %in% 
+                                                 c("Bosnia and Herzegovina", "Croatia", "Former Yugoslav Republic of Macedonia (FYROM)", "Greece", "Malta", "South Eastern Europe, nfd(c)")
+                                               )]) / popl)*100
+
+POA_abs2006$Born_UK[i] = (sum(df$Persons[which(df$Country %in% 
+                                                 c("United Kingdom(d)")
+                                               )]) / popl)*100
+
+POA_abs2006$Born_Asia[i] = (sum(df$Persons[which(df$Country %in% 
+                                                 c("China (excl. SARs and Taiwan Province)(b)", "India", "Indonesia", "Japan", "Korea, Republic of (South)", "Malaysia", "Philippines", "Singapore", "Sri Lanka", "Thailand", "Viet Nam")
+                                               )]) / popl)*100
+}
+```
+
+B 13
+Religion
+```{r B_11_2006, echo=FALSE}
+sheet_ref <- "B 13"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+
+colnames(df) = c("Type", "Persons")
+df$Persons = suppressWarnings(as.numeric(df$Persons))
+
+popl = df$Persons[37] - df$Persons[36] # excludes not stated
+
+#Metric
+POA_abs2006$Christianity[i] = (df$Persons[26]/popl)*100
+POA_abs2006$Catholic[i] = (df$Persons[11]/popl)*100
+POA_abs2006$Anglican[i] = (df$Persons[7]/popl)*100
+
+POA_abs2006$OtherChrist[i] = ((df$Persons[26] - df$Persons[11] - df$Persons[7])/popl)*100
+
+POA_abs2006$Buddhism[i] = (df$Persons[5]/popl)*100
+POA_abs2006$Islam[i] = (df$Persons[28]/popl)*100
+POA_abs2006$Judaism[i] = (df$Persons[29]/popl)*100
+
+POA_abs2006$NoReligion[i] = (df$Persons[34]/popl)*100
+
+POA_abs2006$Religion_NS[i] = (df$Persons[36] / (popl + df$Persons[36]))*100 # denominator is total population who responded and did not
+
+POA_abs2006$Other_NonChrist[i] = 100 - POA_abs2006$NoReligion[i] - POA_abs2006$Christianity[i] #Non Christian and not no religion
+}
+```
+
+B 14
+Currently Studying includes not stated as it is not available in 2016
+```{r B_14_2006, echo=FALSE}
+sheet_ref <- "B 14"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+  
+colnames(df) = c("Type", "Persons")
+df$Persons = suppressWarnings(as.numeric(df$Persons))
+
+popl = POA_abs2006$Population[i]
+
+#Percentage of total population that are currently studying at any level
+POA_abs2006$CurrentlyStudying[i] = (df$Persons[40]/popl) * 100
+}
+```
+
+B 15
+```{r B_15_2006, echo=FALSE}
+sheet_ref <- "B 15"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+df <- read_excel(excel_ref, sheet = sheet_ref)[39:49,c(1,11)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+  
+colnames(df) = c("Type", "Persons")
+df$Persons = suppressWarnings(as.numeric(df$Persons))
+
+popl = df$Persons[which(df$Type == "Total")] - df$Persons[which(df$Type == "Highest year of school not stated")] #implicitly only of aged 15+, removing "not stated"
+
+#Percentage of total population that have finished high school
+POA_abs2006$HighSchool[i] = (df$Persons[1]/popl) * 100
+POA_abs2006$HighSchool_NS[i] = (df$Persons[which(df$Type == "Highest year of school not stated")]/df$Persons[which(df$Type == "Total")]) * 100
+}
+```
+
+B 18
+```{r B_18_2006, echo=FALSE}
+sheet_ref <- "B 18"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+question_popl = as.numeric(df[48,5]) - as.numeric(df[48,4]) #aged 15+ and remove "not stated"
+
+#Percentage of people over 15 who volunteer
+POA_abs2006$Volunteer[i] = (as.numeric(df[48,2])/question_popl) * 100
+POA_abs2006$Volunteer_NS[i] = (as.numeric(df[48,4])/as.numeric(df[48,5])) * 100
+}
+```
+
+B 24
+```{r B_24_2006, echo=FALSE}
+sheet_ref <- "B 24"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+df2 <- read_excel(excel_ref, sheet = "B 25")
+
+question_popl <- as.numeric(df[45,2]) # Number of families
+
+#Family Ratio
+POA_abs2006$FamilyRatio[i] = as.numeric(df2[46,4]) / question_popl #number of people in families / number of families
+
+# Couple without children household
+POA_abs2006$Couple_NoChild_House[i] = (as.numeric(df[9,2]) / question_popl) * 100
+
+# One parent family household
+POA_abs2006$OneParent_House[i] = (as.numeric(df[41,2]) / question_popl) * 100
+
+# Couple with children household
+POA_abs2006$Couple_WChild_House[i] = (as.numeric(df[25,2]) / question_popl) * 100
+
+}
+
+remove(df2)
+```
+
+B 30
+```{r B_30_2006, echo=FALSE}
+sheet_ref <- "B 30"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+# Single person household (% of total households)
+POA_abs2006$SP_House[i] = (as.numeric(df[12,4]) / as.numeric(df[19,4])) * 100
+}
+```
+
+B 32
+```{r B_32_2006, echo=FALSE}
+sheet_ref <- "B 32"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+popl = as.numeric(df[29,7])-as.numeric(df[27,7]) # total houses, excluding not stated
+
+#Percentage of total population that do not own/mortgage their dwelling
+POA_abs2006$Owned[i] = (as.numeric(df[12,7])/popl) * 100
+POA_abs2006$Mortgage[i] = (as.numeric(df[14,7])/popl) * 100
+POA_abs2006$Renting[i] = (as.numeric(df[23,7])/popl) * 100
+POA_abs2006$PublicHousing[i] = (as.numeric(df[18,7])/popl) * 100
+
+POA_abs2006$Tenure_NS[i] = (as.numeric(df[27,7])/as.numeric(df[29,7]))*100
+}
+```
+
+B 35
+```{r B_35_2006, echo=FALSE}
+sheet_ref <- "B 35"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,7)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+  
+colnames(df) <- c("Type","Number") 
+df$Number <- suppressWarnings(as.numeric(df$Number))
+
+popl = df$Number[11] - df$Number[10] # number of dwellings excluding not stated
+
+#Percentage of Dwellings with internet access
+POA_abs2006$InternetAccess[i] = (df$Number[9]/popl) * 100 #excludes not stated
+POA_abs2006$InternetAccess_NS[i] = ((df$Number[10] / df$Number[11])) * 100 #percentage of dwellings not stating their internet access
+}
+```
+
+B 36
+```{r B_36_2006, echo=FALSE}
+sheet_ref <- "B 36"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+  
+colnames(df) <- c("Category","Number") 
+df$Number <- suppressWarnings(as.numeric(df$Number))
+
+#Unemployment Rate
+POA_abs2006$Unemployed[i] = df$Number[13] #Unemployed / Labour Force
+POA_abs2006$LFParticipation[i] = df$Number[14] #LF participation rate
+
+# Different address to 5 years ago
+POA_abs2006$DiffAddress[i] = (df$Number[26]/(df$Number[25]+df$Number[26])) * 100
+}
+```
+
+B 39b
+```{r B_39b_2006, echo=FALSE}
+sheet_ref <- "B 39b"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,10)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+
+colnames(df) <- c("Category","Number") 
+df$Number <- suppressWarnings(as.numeric(df$Number))
+
+popl_15plus <- POA_abs2006$Population[i]*(100  - POA_abs2006$Age00_04[i] - POA_abs2006$Age05_14[i] - POA_abs2006$Age15_19[i])/100 #population aged 15+
+popl <- popl_15plus - df$Number[15] #Excludes not stated from total pop over 15
+
+#Bachelor and Postgraduate
+POA_abs2006$Bachelor[i] = (df$Number[7]/popl) * 100
+POA_abs2006$DipCert[i] = ((df$Number[6]+df$Number[8]+df$Number[13])/popl) * 100
+POA_abs2006$Postgraduate[i] = ((df$Number[5])/popl) * 100
+POA_abs2006$University_NS[i] = (df$Number[15]/popl_15plus) * 100 #not stated and inadequately described out of population 15+
+}
+```
+
+B 42c
+```{r B_42c_2006, echo=FALSE}
+sheet_ref <- "B 42c"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,11)] %>%
+  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2006 Census of Population and Housing`))
+
+colnames(df) <- c("Category","Number") 
+df$Number <- suppressWarnings(as.numeric(df$Number))
+
+popl <- df$Number[which(df$Category == "Total")] - df$Number[which(df$Category == "Inadequately described/Not stated")] # remove not stated or inadequately described
+
+# Industry of employment
+POA_abs2006$Extractive[i] = (sum(df$Number[which(df$Category %in% c("Agriculture, forestry & fishing", "Mining", "Electricity, gas, water & waste services"))]) / popl) * 100
+  
+POA_abs2006$Transformative[i] = (sum(df$Number[which(df$Category %in% c("Manufacturing", "Construction"))]) / popl) * 100
+
+POA_abs2006$Distributive[i] = (sum(df$Number[which(df$Category %in% c("Wholesale trade", "Retail trade", "Transport, postal & warehousing"))]) / popl) * 100
+
+POA_abs2006$Finance[i] = (sum(df$Number[which(df$Category %in% c("Financial & insurance services"))]) / popl) * 100
+
+POA_abs2006$SocialServ[i] = (sum(df$Number[which(df$Category %in% c("Education & training", "Health care & social assistance", "Arts & recreation services"))]) / popl) * 100
+}
+```
+
+B 44
+```{r B_44_2006, echo=FALSE}
+sheet_ref <- "B 44"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[c(8:10,51),]
+
+popl <- as.numeric(df[4,11]) - as.numeric(df[4,10]) # remove not stated and inadequately described
+
+# Occupation 
+POA_abs2006$ManagerAdminClericalSales[i] = ((as.numeric(df[4,2]) + as.numeric(df[4,6]) + as.numeric(df[4,7]))/popl)*100
+
+POA_abs2006$Professional[i] = (as.numeric(df[4,3])/popl)*100
+
+POA_abs2006$Tradesperson[i] = (as.numeric(df[4,4])/popl)*100
+
+POA_abs2006$Laborer[i] = (as.numeric(df[4,9])/popl)*100
+}
+```
+
+
+Additional sheets - determine percentage of population that are not answering the question.
+```{r}
+#BornOverseas
+sheet_ref <- "B 09"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)]
+
+POA_abs2006$BornOverseas_NS[i] = (as.numeric(df[45,2]) / as.numeric(df[47,2]))*100
+}
+
+#Language
+sheet_ref <- "B 12"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)]
+
+POA_abs2006$Language_NS[i] = (as.numeric(df[53,2]) / as.numeric(df[55,2]))*100
+}
+
+#PersonalIncome_NS
+sheet_ref <- "B 16b"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,11)]
+
+POA_abs2006$PersonalIncome_NS[i] = (as.numeric(df[23,2]) / as.numeric(df[25,2]))*100
+}
+
+#FamilyIncome_NS
+sheet_ref <- "B 26"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,6)]
+
+POA_abs2006$FamilyIncome_NS[i] = ((as.numeric(df[25,2]) + as.numeric(df[26,2])) / as.numeric(df[28,2]))*100
+}
+
+#HouseholdIncome_NS
+sheet_ref <- "B 28"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)[,c(1,4)]
+
+POA_abs2006$HouseholdIncome_NS[i] = ((as.numeric(df[26,2]) + as.numeric(df[27,2])) / as.numeric(df[29,2]))*100
+}
+
+#Rent_NS
+sheet_ref <- "B 34"
+
+for (i in 1:nrow(POA_2006)) {
+POA <- POA_2006$POA[i]
+excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2006/POA_Unzipped/20010-BCP-", POA, ".xls")
+
+df <- read_excel(excel_ref, sheet = sheet_ref)
+
+POA_abs2006$Rent_NS[i] = (as.numeric(df[22,8])/ as.numeric(df[24,8]))*100
+}
+```
+
+
+# Change any Inf and NaN to NA
+```{r}
+#is.na(POA_abs2001) <- sapply(POA_abs2001, is.infinite)
+#is.na(POA_abs2006) <- sapply(POA_abs2006, is.infinite)
+
+for (i in 1:ncol(POA_abs2001)) {
+  POA_abs2001[which(is.nan(POA_abs2001[,i] %>% unlist)), i] <- NA
+  POA_abs2001[which(is.infinite(POA_abs2001[,i] %>% unlist)), i] <- NA
+}
+for (i in 1:ncol(POA_abs2006)) {
+  POA_abs2006[which(is.nan(POA_abs2006[,i] %>% unlist)), i] <- NA
+  POA_abs2001[which(is.infinite(POA_abs2001[,i] %>% unlist)), i] <- NA
+}
+
+```
+
+# Inflation
+```{r}
+POA_abs2006 <- POA_abs2006 %>%
+  mutate(MedianFamilyIncome = MedianFamilyIncome/inflation_rates[1],
+         MedianHouseholdIncome = MedianHouseholdIncome/inflation_rates[1],
+         MedianLoanPay = MedianLoanPay/inflation_rates[1],
+         MedianPersonalIncome = MedianPersonalIncome/inflation_rates[1],
+         MedianRent = MedianRent/inflation_rates[1])
+```
+
+# Change BornOverseas to BornElsewhere
+```{r}
+# Change BornOverseas to BornElsewhere
+POA_abs2001 <- POA_abs2001 %>%
+  mutate(BornElsewhere = BornOverseas - Born_MidEast - Born_SE_Europe - Born_UK) %>% 
+  select(-BornOverseas)
+
+POA_abs2006 <- POA_abs2006 %>%
+  mutate(BornElsewhere = BornOverseas - Born_MidEast - Born_SE_Europe - Born_UK) %>% 
+  select(-BornOverseas)
+```
+
+#Export .rds
+```{r}
+require(readr)
+
+save(POA_abs2001, file = "/Users/Jeremy/Documents/R/Data/Clean/POA_abs2001.rda")
+save(POA_abs2006, file = "/Users/Jeremy/Documents/R/Data/Clean/POA_abs2006.rda")
+```
+
