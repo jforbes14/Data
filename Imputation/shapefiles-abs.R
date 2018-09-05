@@ -7,9 +7,12 @@
 ## Download ABS 2011 and 2016 ERSI shapefiles from: https://datapacks.censusdata.abs.gov.au/datapacks/
 
 ## This script generates:
-## sFsmall_abs01, sFsmall_abs06e04, sFsmall_abs06e07, sFsmall_abs11, sFsmall_abs16
+## simp_abs01, simp_abs06e04, simp_abs06e07, simp_abs11, simp_abs16
 ## nat_map_abs01, nat_map_abs06e04, nat_map_abs06e07 nat_map_abs11, nat_map_abs16
 ## nat_data_abs01, nat_data_abs06e04, nat_data_abs06e07, nat_data_abs11, nat_data_abs16
+
+# Simplified shapefiles are to be used in "mapping-electorate-composition.R"
+
 
 #Read in ABS Census shapefiles
 library(knitr)
@@ -41,6 +44,8 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys) # ERROR: some polygons do not have 4+ joins
 nat_data16 <- data.frame(nat_data16, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_abs16 <- sF
 sFsmall_abs16 <- sFsmall
 nat_data_abs16 <- nat_data16
@@ -63,6 +68,8 @@ nat_map11 <- left_join(nat_map11, nms, by="id")
 polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data11 <- data.frame(nat_data11, centroids)
+
+sFsmall@data <- cbind(sFsmall@data, centroids)
 
 sF_abs11 <- sF
 sFsmall_abs11 <- sFsmall
@@ -87,6 +94,8 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data06e07 <- data.frame(nat_data06e07, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_abs06e07 <- sF
 sFsmall_abs06e07 <- sFsmall
 nat_data_abs06e07 <- nat_data06e07
@@ -109,8 +118,10 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data06e04 <- data.frame(nat_data06e04, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_abs06e04 <- sF
-sFsmall_abs06e04 <- sF
+sFsmall_abs06e04 <- sFsmall
 nat_data_abs06e04 <- nat_data06e04
 nat_map_abs06e04 <- nat_map06e04
 
@@ -133,13 +144,19 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data01 <- data.frame(nat_data01, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_abs01 <- sF
 sFsmall_abs01 <- sFsmall
 nat_data_abs01 <- nat_data01
 nat_map_abs01 <- nat_map01
 
-
-
+# Renaming maps to match previous files
+simp_abs01 <- sFsmall_abs01
+simp_abs06e04 <- sFsmall_abs06e04
+simp_abs06e07 <- sFsmall_abs06e07
+simp_abs11 <- sFsmall_abs11
+simp_abs16 <- sFsmall_abs16
 
 # Remove duplicated objects
 remove(sF)
@@ -164,6 +181,11 @@ remove(sF_abs06e07)
 remove(sF_abs11)
 remove(sF_abs16)
 
+remove(sF_abs01)
+remove(sFsmall_abs06e04)
+remove(sFsmall_abs06e07)
+remove(sFsmall_abs11)
+remove(sFsmall_abs16)
 
 
 # Rename/remove columns from nat_data to be consistent
@@ -189,21 +211,11 @@ nat_map_abs06e07 <- nat_map_abs06e07[,c(1:7,12)]
 colnames(nat_map_abs06e04)[8] <- "CED_NAME"
 
 
+
+
 # Save as .rda
-save(sFsmall_abs01, file = "Clean/Maps/sFsmall_abs01.rda")
-save(sFsmall_abs06e04, file = "Clean/Maps/sFsmall_abs06e04.rda")
-save(sFsmall_abs06e07, file = "Clean/Maps/sFsmall_abs06e07.rda")
-save(sFsmall_abs11, file = "Clean/Maps/sFsmall_abs11.rda")
-save(sFsmall_abs16, file = "Clean/Maps/sFsmall_abs16.rda")
-
-#save(nat_map_abs01, file = "Clean/Maps/nat_map_abs01.rda")
-#save(nat_map_abs06e04, file = "Clean/Maps/nat_map_abs06e04.rda")
-#save(nat_map_abs06e07, file = "Clean/Maps/nat_map_abs06e07.rda")
-#save(nat_map_abs11, file = "Clean/Maps/nat_map_abs11.rda")
-#save(nat_map_abs16, file = "Clean/Maps/nat_map_abs16.rda")
-
-#save(nat_data_abs01, file = "Clean/Maps/nat_data_abs01.rda")
-#save(nat_data_abs06e04, file = "Clean/Maps/nat_data_abs06e04.rda")
-#save(nat_data_abs06e07, file = "Clean/Maps/nat_data_abs06e07.rda")
-#save(nat_data_abs11, file = "Clean/Maps/nat_data_abs11.rda")
-#save(nat_data_abs16, file = "Clean/Maps/nat_data_abs16.rda")
+save(simp_abs01, file = "Clean/Maps/simp_abs01.rda")
+save(simp_abs06e04, file = "Clean/Maps/simp_abs06e04.rda")
+save(simp_abs06e07, file = "Clean/Maps/simp_abs06e07.rda")
+save(simp_abs11, file = "Clean/Maps/simp_abs11.rda")
+save(simp_abs16, file = "Clean/Maps/simp_abs16.rda")

@@ -10,6 +10,7 @@
 ## nat_data_aec10, nat_data_aec13, nat_data_aec16
 ## nat_map_aec10, nat_map_aec13, nat_map_aec16
 
+# Simplified shapefiles are to be used in "mapping-POA.R" and "mapping-electorate-composition.R"
 
 library(knitr)
 library(maptools)
@@ -38,6 +39,8 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data16 <- data.frame(nat_data16, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_aec16 <- sF
 sFsmall_aec16 <- sFsmall
 nat_data_aec16 <- nat_data16
@@ -60,6 +63,8 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data13 <- data.frame(nat_data13, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_aec13 <- sF
 sFsmall_aec13 <- sFsmall
 nat_data_aec13 <- nat_data13
@@ -81,11 +86,18 @@ polys <- as(sF, "SpatialPolygons")
 centroids <- seq_along(polys) %>% purrr::map_df(centroid, polys=polys)
 nat_data10 <- data.frame(nat_data10, centroids)
 
+sFsmall@data <- cbind(sFsmall@data, centroids)
+
 sF_aec10 <- sF
 sFsmall_aec10 <- sFsmall
 nat_data_aec10 <- nat_data10
 nat_map_aec10 <- nat_map10
 
+
+# Rename to match other files
+simp_aec10 <- sFsmall_aec10
+simp_aec13 <- sFsmall_aec13
+simp_aec16 <- sFsmall_aec16
 
 # Remove duplicated objects
 remove(sF)
@@ -103,21 +115,17 @@ remove(centroids)
 remove(polys)
 remove(nms)
 
+remove(sFsmall_aec10)
+remove(sFsmall_aec13)
+remove(sFsmall_aec16)
+
 
 # Rename/remove columns from nat_map to be consistent
 colnames(nat_data_aec10) <- colnames(nat_data_aec13)
 
 
 # Save as .rda
-save(sFsmall_aec10, file = "Clean/Maps/sFsmall_aec10.rda")
-save(sFsmall_aec13, file = "Clean/Maps/sFsmall_aec13.rda")
-save(sFsmall_aec16, file = "Clean/Maps/sFsmall_aec16.rda")
-
-#save(nat_map_aec10, file = "Clean/Maps/nat_map_aec10.rda")
-#save(nat_map_aec13, file = "Clean/Maps/nat_map_aec13.rda")
-#save(nat_map_aec16, file = "Clean/Maps/nat_map_aec16.rda")
-
-#save(nat_data_aec10, file = "Clean/Maps/nat_data_aec10.rda")
-#save(nat_data_aec13, file = "Clean/Maps/nat_data_aec13.rda")
-#save(nat_data_aec16, file = "Clean/Maps/nat_data_aec16.rda")
+save(simp_aec10, file = "Clean/Maps/simp_aec10.rda")
+save(simp_aec13, file = "Clean/Maps/simp_aec13.rda")
+save(simp_aec16, file = "Clean/Maps/simp_aec16.rda")
 
