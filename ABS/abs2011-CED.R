@@ -36,7 +36,7 @@ B43D_Industry <- read_csv("./2011_BCP_CED_for_AUST_short-header/2011Census_B43D_
 B45B_Occupation <- read_csv("./2011_BCP_CED_for_AUST_short-header/2011Census_B45B_AUST_CED_short.csv")
 
 
-CED <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/tidy_CED11.csv")
+CED <- read_csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/tidy_CED11.csv")
 
 new_2011 <- B1_Main %>% mutate(
   ID = CED$CED,

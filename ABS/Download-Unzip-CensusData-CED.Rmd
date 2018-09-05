@@ -13,7 +13,7 @@ Profiles are split into separate folders for ABS2001 and ABS2006, of which have 
 
 CED List
 ```{r CED_list_2001}
-CED_list_2001 <- read.csv("Supplement/CED_Definitions/CED2001.csv")
+CED_list_2001 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2001.csv")
 CED_no_2001 <- CED_list_2001$CED
 ```
 
@@ -49,10 +49,10 @@ for (i in 1:length(CED_no_2001)) {
 
 CED list 2006
 ```{r CED_list_2006}
-CED_list_2006 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/CED_Definitions/CED2006.csv")
+CED_list_2006 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2006.csv")
 CED_no_2006 <- CED_list_2006$CED
 
-CED_list_full <- read.csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/CED_Definitions/CED2006_07.csv")
+CED_list_full <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2006_07.csv")
 CED_no_2006_07 <- CED_list_full$CED
 ```
 

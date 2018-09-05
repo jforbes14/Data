@@ -19,8 +19,8 @@ Each chunk is this file accesses a different sheet in the raw data .xls file, an
 
 CED lists
 ```{r CED_lists}
-CED_list_2001 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/CED_Definitions/CED2001.csv")
-CED_list_2006 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/CED_Definitions/CED2006.csv")
+CED_list_2001 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2001.csv")
+CED_list_2006 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2006.csv")
 CED_list_2006$State <- as.character(CED_list_2006$State)
 
 for (i in 1:nrow(CED_list_2006)) {
@@ -35,7 +35,7 @@ for (i in 1:nrow(CED_list_2006)) {
   }
 }
 
-CED_list_2006_e07 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw/Supplement/CED_Definitions/CED2006_07.csv")
+CED_list_2006_e07 <- read.csv("/Users/Jeremy/Documents/R/Data/Raw-Supplement/CED_Definitions/CED2006_07.csv")
 CED_list_2006_e07$State <- as.character(CED_list_2006_e07$State)
 
 for (i in 1:nrow(CED_list_2006_e07)) {
