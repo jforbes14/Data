@@ -56,7 +56,7 @@ G57_Occupation <-
         read_csv("./Raw/2016 Census GCP Commonwealth Electoral Divisions for AUST/2016Census_G57B_AUS_CED.csv"))
 
 new <- G1_Main %>% mutate(
-  CED = substr(CED_CODE_2016, 4, 6),
+  ID = substr(CED_CODE_2016, 4, 6),
   
   #G01
   Population = Tot_P_P,
@@ -204,7 +204,7 @@ CED <- read_excel("./Raw-Supplement/tidy_CED16.xlsx")
 Area_sqkm <- read_csv("./Raw/2016 Census GCP Commonwealth Electoral Divisions for AUST/2016Census_geog_desc_1st_and_2nd_release.csv")
 
 new <- new %>% 
-  left_join(CED %>% select(-X__1), by = "CED")
+  left_join(CED %>% rename(ID = CED) %>% select(-X__1), by = "ID")
 
 abs2016 <- new[-c(48,49,87,88,119,120,132,133,150,151,157,158,161,162,165:168),c(110:ncol(new))] %>%
   mutate(InternetUse_NS = 0)
