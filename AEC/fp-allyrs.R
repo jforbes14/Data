@@ -1,4 +1,11 @@
-## Adding first preference votes, and winning party to data_mod
+## Data frame of first preference votes for each party (in categories), and winning party
+
+# Liberal National Coaliation: CLP, LNP, NP, LP
+# Labor: ALP, CLR
+# One Nation: HAN, ON
+# Greens: GRN, GWA, TG
+# Independents: IND
+# All other parties listed as Other
 
 library(tidyverse)
 
