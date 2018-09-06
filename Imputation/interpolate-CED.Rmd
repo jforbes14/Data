@@ -1,0 +1,699 @@
+---
+title: "Imputed-Election-Profiles"
+author: "Jeremy Forbes"
+date: "13/05/2018"
+output: pdf_document
+---
+
+----------------------------------------------------------------------------------------
+
+## README
+
+This file is the final step in imputing sociodemographic information for each division at election time, at CED level.
+
+The POA level imputation is done using the script "interpolate-POA.R".
+
+For each election year, we will interpolate between the censuses either side of the election. The census profiles contain information about each division, at census time. 
+
+We have previously computed how much of each Census divisions is made up by the overlapping election divisions (different points in time), and use this mapping to impute Census information so that it aligns with the election division boundaries.
+
+A reminder - when a census and election fall on the same year, we directly join the census information to the election.
+
+The required files are:
+
+- Mapping_aecXX: which determines the area composition of each election division, by census divisions in the corresponding election division boundary. XX represents the election year suffix {04, 07, 10 and 13}.
+
+- abs20XX: census profiles for each census division (sociodemographics). XX represents the census year suffix {01, 06 (e04 and e07 variants), 11 and 16}.
+
+
+----------------------------------------------------------------------------------------
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_knit$set(root.dir = "/Users/Jeremy/Documents/R/Data")
+
+library(tidyverse)
+```
+
+## Import clean data
+
+Load:
+- Mapped electorates
+- Census
+
+```{r}
+load("./Clean/abs2001.rda")
+abs2001$year = "abs2001"
+
+load("./Clean/abs2006.rda")
+abs2006_e04 <- abs2006
+abs2006_e04$year = "abs2006_e04"
+remove(abs2006)
+
+load("./Clean/abs2006_e07.rda")
+abs2006_e07$year = "abs2006_e07"
+
+load("./Clean/abs2011.rda")
+abs2011$year = "abs2011"
+
+load("./Clean/abs2016.rda")
+abs2016$year = "abs2016"
+
+load("./Clean/Maps/Mapping_aec04.rda")
+load("./Clean/Maps/Mapping_aec07.rda")
+load("./Clean/Maps/Mapping_aec10.rda")
+load("./Clean/Maps/Mapping_aec13.rda")
+
+Mapping_aec04$Census_Division <- toupper(Mapping_aec04$Census_Division)
+Mapping_aec07$Census_Division <- toupper(Mapping_aec07$Census_Division)
+Mapping_aec10$Census_Division <- toupper(Mapping_aec10$Census_Division)
+Mapping_aec13$Census_Division <- toupper(Mapping_aec13$Census_Division)
+
+Mapping_aec04$Election_Division <- toupper(Mapping_aec04$Election_Division)
+Mapping_aec07$Election_Division <- toupper(Mapping_aec07$Election_Division)
+Mapping_aec10$Election_Division <- toupper(Mapping_aec10$Election_Division)
+Mapping_aec13$Election_Division <- toupper(Mapping_aec13$Election_Division)
+
+```
+
+Order columns alphabetically
+```{r}
+abs2001 <- abs2001[,order(colnames(abs2001))]
+abs2006_e04 <- abs2006_e04[,order(colnames(abs2006_e04))]
+abs2006_e07 <- abs2006_e07[,order(colnames(abs2006_e07))]
+abs2011 <- abs2011[,order(colnames(abs2011))]
+abs2016 <- abs2016[,order(colnames(abs2016))]
+```
+
+
+Adjust Census data for inflation
+```{r}
+## Adjust for Inflation (relative to 2001 CPI) and Order Columns
+# Sourced from Reserve Bank of Australia: Inflation Calculation
+# https://www.rba.gov.au/calculator/annualDecimal.html
+
+# Has already been adjusted in original profiles
+
+```
+
+## Final imputed profiles
+
+### Socio-demographics for 2004 election, "sd2004"
+
+At the time of 2001 Census, impute the populations and the proportion of imputed population from each intersection.
+```{r}
+# Impute population
+p1_2004 <- Mapping_aec04 %>%
+  mutate(Census_Population = 0, Imputed_Population = 0)
+
+for (i in 1:nrow(p1_2004)) {
+  p1_2004$Census_Population[i] = abs2001$Population[which(abs2001$Electorate == p1_2004$Census_Division[i])]
+  # Imputed population (from Census division i) = (Census Population X Area intersection/Area Census division)
+  p1_2004$Imputed_Population[i] = p1_2004$Census_Population[i]*p1_2004$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p1_2004, sum)
+
+p1_2004$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p1_2004)) {
+  p1_2004$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p1_2004$Election_Division[i])]
+}
+
+p1_2004$Proportion_Imputed_Population = p1_2004$Imputed_Population/p1_2004$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p1_2004 <- filter(p1_2004, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p1_2004$Election_Division <- as.factor(p1_2004$Election_Division)
+
+# ABS2001 data frame with numeric variables only 
+num_abs2001 <- abs2001[,unlist(lapply(abs2001, is.numeric))]
+
+# Empty data frame for 2001 imputed socio-demographics for 2004 election
+sd_2001_e04 <- num_abs2001
+sd_2001_e04[,] = 0
+sd_2001_e04$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p1_2004$Election_Division))) {
+  Electorate_Name = levels(p1_2004$Election_Division)[i]
+  Intersect_Divisions = filter(p1_2004, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2001[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion of imputed population
+    temp = num_abs2001[which(abs2001$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2001_e04$Election_Division[i] = Electorate_Name
+  sd_2001_e04[i, 1:(ncol(sd_2001_e04) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2001_e04$Election_Division <- as.factor(sd_2001_e04$Election_Division)
+```
+
+
+
+At the time of 2006 census
+```{r}
+# 2006 Census
+p2_2004 <- abs2006_e04
+sd_2006_e04 <- abs2006_e04[,unlist(lapply(abs2006_e04, is.numeric))]
+sd_2006_e04$Election_Division <- as.factor(abs2006_e04$Electorate)
+```
+
+Interpolate over time:
+  2004 election occurs 3 years after 2001, and 2 years before 2006.
+```{r}
+# Rows are matching
+sd_2001_e04 <- sd_2001_e04[match(levels(sd_2001_e04$Election_Division), sd_2001_e04$Election_Division),]
+sd_2006_e04 <- sd_2006_e04[match(levels(sd_2006_e04$Election_Division), sd_2006_e04$Election_Division),]
+
+if (sum(sd_2001_e04$Election_Division == sd_2006_e04$Election_Division) != 150) {
+  print("WARNING: Election divisions do not match!")
+} #print if rows have not been aligned correctly
+
+# Interpolate over time (between Census years)
+sd2004 <- (2/5)*sd_2001_e04[,1:(ncol(sd_2001_e04)-1)] + (3/5)*sd_2006_e04[,1:(ncol(sd_2006_e04)-1)]
+
+sd2004$Election_Division = sd_2001_e04$Election_Division
+
+# Remove IDs
+sd2004 <- select(sd2004, -ID)
+```
+
+
+
+### Socio-demographics for 2007 election, "sd2007"
+
+At the time of 2006 census, impute the populations and the proportion of imputed population from each intersection.
+
+Note: names for 2007 election divisions have spaces removed from their names, so must remove spaces from 2011 imputation.
+
+```{r}
+## 2006 Census
+p2_2007 <- abs2006_e07
+sd_2006_e07 <- abs2006_e07[,unlist(lapply(abs2006_e07, is.numeric))]
+sd_2006_e07$Election_Division <- as.factor(abs2006_e07$Electorate)
+
+```
+
+
+
+At the time of 2011 Census.
+```{r}
+# 2011 Census
+# Impute population
+p1_2007 <- Mapping_aec07 %>%
+  mutate(Census_Population = 0, Imputed_Population = 0)
+
+for (i in 1:nrow(p1_2007)) {
+  p1_2007$Census_Population[i] = abs2011$Population[which(abs2011$Electorate == p1_2007$Census_Division[i])]
+  p1_2007$Imputed_Population[i] = p1_2007$Census_Population[i]*p1_2007$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p1_2007, sum)
+
+p1_2007$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p1_2007)) {
+  p1_2007$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p1_2007$Election_Division[i])]
+}
+
+p1_2007$Proportion_Imputed_Population = p1_2007$Imputed_Population/p1_2007$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p1_2007 <- filter(p1_2007, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p1_2007$Election_Division <- as.factor(p1_2007$Election_Division)
+
+# ABS2011 data frame with numeric variables only 
+num_abs2011 <- abs2011[,unlist(lapply(abs2011, is.numeric))]
+
+# Empty data frame for 2011 imputed socio-demographics for 2007 election
+sd_2011_e07 <- num_abs2011
+sd_2011_e07[,] = 0
+sd_2011_e07$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p1_2007$Election_Division))) {
+  Electorate_Name = levels(p1_2007$Election_Division)[i]
+  Intersect_Divisions = filter(p1_2007, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2011[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion
+    temp = num_abs2011[which(abs2011$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2011_e07$Election_Division[i] = Electorate_Name
+  sd_2011_e07[i, 1:(ncol(sd_2011_e07) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2011_e07$Election_Division <- as.factor(sd_2011_e07$Election_Division)
+
+# Remove IDs
+sd_2011_e07 <- select(sd_2011_e07, -ID)
+```
+
+
+
+Interpolate over time:
+  2007 election occurs 4 years before 2011, and 1 year after 2006.
+```{r}
+# Removing spaces from Election_Division names
+sd_2011_e07 <- sd_2011_e07 %>% rowwise %>%
+  mutate(Election_Division = gsub(" ", "", Election_Division))
+sd_2011_e07$Election_Division <- as.factor(sd_2011_e07$Election_Division)
+
+# Rows are matching
+sd_2011_e07 <- sd_2011_e07[match(levels(sd_2011_e07$Election_Division), sd_2011_e07$Election_Division),]
+sd_2006_e07 <- sd_2006_e07[match(levels(sd_2006_e07$Election_Division), sd_2006_e07$Election_Division),]
+
+if (sum(sd_2011_e07$Election_Division == sd_2006_e07$Election_Division) != 150) {
+  print("WARNING: Election divisions do not match!")
+} #print if rows have not been aligned correctly
+
+# Interpolate over time (between Census years)
+sd2007 <- (1/5)*sd_2011_e07[,1:(ncol(sd_2011_e07)-1)] + (4/5)*sd_2006_e07[,1:(ncol(sd_2006_e07)-1)]
+sd2007$Election_Division = sd_2011_e07$Election_Division
+```
+
+
+
+
+### Socio-demographics for 2010 election, "sd2010"
+
+At the time of 2006 census, impute the populations and the proportion of imputed population from each intersection.
+
+Note: this imputation uses the 2007 electorate boundary version of the map of 2006 Census divisions.
+
+- Do the comparisons filtering Mapping_aec10 for the correct year
+- Need to remove spaces from division names in Mapping_aec10, because they have been removed from abs2006_e07
+
+```{r}
+# Impute population
+p1_2010 <- Mapping_aec10 %>% 
+  mutate(Census_Population = 0, Imputed_Population = 0) %>%
+  filter(Year == "2006") %>% rowwise %>%
+  mutate(Census_Division = gsub(" ", "", Census_Division))
+
+
+for (i in 1:nrow(p1_2010)) {
+  p1_2010$Census_Population[i] = abs2006_e07$Population[which(abs2006_e07$Electorate == p1_2010$Census_Division[i])]
+  p1_2010$Imputed_Population[i] = p1_2010$Census_Population[i]*p1_2010$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p1_2010, sum)
+
+p1_2010$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p1_2010)) {
+  p1_2010$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p1_2010$Election_Division[i])]
+}
+
+p1_2010$Proportion_Imputed_Population = p1_2010$Imputed_Population/p1_2010$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p1_2010 <- filter(p1_2010, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p1_2010$Election_Division <- as.factor(p1_2010$Election_Division)
+
+# abs2006_e07 data frame with numeric variables only 
+num_abs2006_e07 <- abs2006_e07[,unlist(lapply(abs2006_e07, is.numeric))]
+
+# Empty data frame for 2011 imputed socio-demographics for 2010 election
+sd_2006_e10 <- num_abs2006_e07
+sd_2006_e10[,] = 0
+sd_2006_e10$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p1_2010$Election_Division))) {
+  Electorate_Name = levels(p1_2010$Election_Division)[i]
+  Intersect_Divisions = filter(p1_2010, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2006_e07[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion
+    temp = num_abs2006_e07[which(abs2006_e07$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2006_e10$Election_Division[i] = Electorate_Name
+  sd_2006_e10[i, 1:(ncol(sd_2006_e10) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2006_e10$Election_Division <- as.factor(sd_2006_e10$Election_Division)
+
+```
+
+
+
+At the time of 2011 Census.
+```{r}
+# Impute population
+p2_2010 <- Mapping_aec10 %>%
+  mutate(Census_Population = 0, Imputed_Population = 0) %>%
+  filter(Year == "2011") %>% rowwise %>%
+  mutate(Census_Division = gsub(" ", "", Census_Division))
+
+# Remove spaces from division names for 2011 Census, so that it matches 2006
+abs2011$Electorate <- gsub(" ", "", abs2011$Electorate) 
+
+for (i in 1:nrow(p2_2010)) {
+  p2_2010$Census_Population[i] = abs2011$Population[which(abs2011$Electorate == p2_2010$Census_Division[i])]
+  p2_2010$Imputed_Population[i] = p2_2010$Census_Population[i]*p2_2010$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p2_2010, sum)
+
+p2_2010$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p2_2010)) {
+  p2_2010$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p2_2010$Election_Division[i])]
+}
+
+p2_2010$Proportion_Imputed_Population = p2_2010$Imputed_Population/p2_2010$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p2_2010 <- filter(p2_2010, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p2_2010$Election_Division <- as.factor(p2_2010$Election_Division)
+
+# ABS2011 data frame with numeric variables only 
+num_abs2011 <- abs2011[,unlist(lapply(abs2011, is.numeric))]
+
+# Empty data frame for 2011 imputed socio-demographics for 2010 election
+sd_2011_e10 <- num_abs2011
+sd_2011_e10[,] = 0
+sd_2011_e10$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p2_2010$Election_Division))) {
+  Electorate_Name = levels(p2_2010$Election_Division)[i]
+  Intersect_Divisions = filter(p2_2010, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2011[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion
+    temp = num_abs2011[which(abs2011$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2011_e10$Election_Division[i] = Electorate_Name
+  sd_2011_e10[i, 1:(ncol(sd_2011_e10) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2011_e10$Election_Division <- as.factor(sd_2011_e10$Election_Division)
+
+# Remove IDs
+sd_2011_e10 <- select(sd_2011_e10, -ID)
+```
+
+
+
+Interpolate over time:
+  2010 election occurs 1 year before 2011, and 4 years after 2006.
+```{r}
+# Rows are matching
+sd_2011_e10 <- sd_2011_e10[match(levels(sd_2011_e10$Election_Division), sd_2011_e10$Election_Division),]
+sd_2006_e10 <- sd_2006_e10[match(levels(sd_2006_e10$Election_Division), sd_2006_e10$Election_Division),]
+
+if (sum(sd_2011_e10$Election_Division == sd_2006_e10$Election_Division) != 150) {
+  print("WARNING: Election divisions do not match!")
+} #print if rows have not been aligned correctly
+
+# Interpolate over time (between Census years)
+sd2010 <- (4/5)*sd_2011_e10[,1:(ncol(sd_2011_e10)-1)] + (1/5)*sd_2006_e10[,1:(ncol(sd_2006_e10)-1)]
+
+# Add electorate names
+sd2010$Election_Division <- sd_2011_e10$Election_Division
+```
+
+
+
+
+### Socio-demographics for 2013 election, "sd2013"
+
+At the time of 2011 census, impute the populations and the proportion of imputed population from each intersection.
+
+```{r}
+# Impute population
+p1_2013 <- Mapping_aec13 %>% 
+  mutate(Census_Population = 0, Imputed_Population = 0) %>%
+  filter(Year == "2011") %>% rowwise %>%
+  mutate(Census_Division = gsub(" ", "", Census_Division))
+
+for (i in 1:nrow(p1_2013)) {
+  p1_2013$Census_Population[i] = abs2011$Population[which(abs2011$Electorate == p1_2013$Census_Division[i])]
+  p1_2013$Imputed_Population[i] = p1_2013$Census_Population[i]*p1_2013$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p1_2013, sum)
+
+p1_2013$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p1_2013)) {
+  p1_2013$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p1_2013$Election_Division[i])]
+}
+
+p1_2013$Proportion_Imputed_Population = p1_2013$Imputed_Population/p1_2013$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p1_2013 <- filter(p1_2013, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p1_2013$Election_Division <- as.factor(p1_2013$Election_Division)
+
+# abs2011 data frame with numeric variables only 
+num_abs2011 <- abs2011[,unlist(lapply(abs2011, is.numeric))]
+
+# Empty data frame for 2011 imputed socio-demographics for 2010 election
+sd_2011_e13 <- num_abs2011
+sd_2011_e13[,] = 0
+sd_2011_e13$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p1_2013$Election_Division))) {
+  Electorate_Name = levels(p1_2013$Election_Division)[i]
+  Intersect_Divisions = filter(p1_2013, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2011[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion
+    temp = num_abs2011[which(abs2011$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2011_e13$Election_Division[i] = Electorate_Name
+  sd_2011_e13[i, 1:(ncol(sd_2011_e13) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2011_e13$Election_Division <- as.factor(sd_2011_e13$Election_Division)
+
+# Remove IDs
+sd_2011_e13 <- select(sd_2011_e13, -ID)
+```
+
+
+
+At the time of 2016 Census.
+```{r}
+# Remove spaces from division names for 2016 Census
+abs2016$Electorate <- gsub(" ", "", abs2016$Electorate) 
+
+# Impute population
+p2_2013 <- Mapping_aec13 %>%
+  mutate(Census_Population = 0, Imputed_Population = 0) %>%
+  filter(Year == "2016") %>% rowwise %>%
+  mutate(Census_Division = gsub(" ", "", Census_Division))
+
+for (i in 1:nrow(p2_2013)) {
+  p2_2013$Census_Population[i] = abs2016$Population[which(abs2016$Electorate == p2_2013$Census_Division[i])]
+  p2_2013$Imputed_Population[i] = p2_2013$Census_Population[i]*p2_2013$Percent_Cens_Composition[i]
+}
+
+# Proportion of total imputed population
+Total_pop <- aggregate(Imputed_Population ~ Election_Division, data = p2_2013, sum)
+
+p2_2013$Total_Imputed_Population = 0
+
+for (i in 1:nrow(p2_2013)) {
+  p2_2013$Total_Imputed_Population[i] = Total_pop$Imputed_Population[which(Total_pop$Election_Division == p2_2013$Election_Division[i])]
+}
+
+p2_2013$Proportion_Imputed_Population = p2_2013$Imputed_Population/p2_2013$Total_Imputed_Population
+
+# Remove imputed populations making up less than 1% of total imputed population
+p2_2013 <- filter(p2_2013, Proportion_Imputed_Population >= 0.01)
+```
+
+Imputing the sociodemographics
+```{r}
+# Election Divisions as factor
+p2_2013$Election_Division <- as.factor(p2_2013$Election_Division)
+
+# ABS2011 data frame with numeric variables only 
+num_abs2016 <- abs2016[,unlist(lapply(abs2016, is.numeric))]
+
+# Empty data frame for 2011 imputed socio-demographics for 2010 election
+sd_2016_e13 <- num_abs2016
+sd_2016_e13[,] = 0
+sd_2016_e13$Election_Division = 0
+
+# Loop
+
+for (i in 1:length(levels(p2_2013$Election_Division))) {
+  Electorate_Name = levels(p2_2013$Election_Division)[i]
+  Intersect_Divisions = filter(p2_2013, Election_Division == Electorate_Name) %>%
+    select(Census_Division, Proportion_Imputed_Population)
+  
+  sd_contribution = num_abs2016[1:nrow(Intersect_Divisions),]
+  sd_contribution[,]=0
+  
+  for (j in 1:nrow(Intersect_Divisions)) {
+    Census_Div = Intersect_Divisions$Census_Division[j]
+    prop = Intersect_Divisions$Proportion_Imputed_Population[j] #proportion
+    temp = num_abs2016[which(abs2016$Electorate == Census_Div),]
+    sd_contribution[j,] = temp * prop #This is the weight * metrics, after this only need to sum
+  }
+  
+  weighted_sd_contribution = t(data.frame(colSums(sd_contribution)))
+  rownames(weighted_sd_contribution) = NULL
+  
+  sd_2016_e13$Election_Division[i] = Electorate_Name
+  sd_2016_e13[i, 1:(ncol(sd_2016_e13) - 1)] = weighted_sd_contribution
+  
+}
+
+sd_2016_e13$Election_Division <- as.factor(sd_2016_e13$Election_Division)
+
+```
+
+
+
+Interpolate over time:
+  2013 election occurs 3 year before 2016, and 2 years after 2011.
+```{r}
+# Rows are matching
+sd_2016_e13 <- sd_2016_e13[match(levels(sd_2016_e13$Election_Division), sd_2016_e13$Election_Division),]
+sd_2011_e13 <- sd_2011_e13[match(levels(sd_2011_e13$Election_Division), sd_2011_e13$Election_Division),]
+
+if (sum(sd_2016_e13$Election_Division == sd_2011_e13$Election_Division) != 150) {
+  print("WARNING: Election divisions do not match!")
+} #print if rows have not been aligned correctly
+
+# Interpolate over time (between Census years)
+sd2013 <- (3/5)*sd_2011_e13[,1:(ncol(sd_2011_e13)-1)] + (2/5)*sd_2016_e13[,1:(ncol(sd_2016_e13)-1)]
+
+# Add electorate names
+sd2013$Election_Division <- sd_2016_e13$Election_Division
+```
+
+## Re-adding spaces to names of Election Divisions in sd2007
+```{r}
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "KINGSFORDSMITH")] = "KINGSFORD SMITH"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "LATROBE")] = "LA TROBE"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "MELBOURNEPORTS")] = "MELBOURNE PORTS"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "NEWENGLAND")] = "NEW ENGLAND"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "NORTHSYDNEY")] = "NORTH SYDNEY"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "PORTADELAIDE")] = "PORT ADELAIDE"
+levels(sd2007$Election_Division)[which(sd2007$Election_Division == "WIDEBAY")] = "WIDE BAY"
+```
+
+## Sort electorates alphabetically
+```{r}
+sd2004 <- sd2004 %>% 
+  arrange(Election_Division)
+sd2007 <- sd2007 %>% 
+  arrange(Election_Division)
+sd2010 <- sd2010 %>% 
+  arrange(Election_Division)
+sd2013 <- sd2013 %>% 
+  arrange(Election_Division)
+```
+
+
+## Save the imputed election sociodemographic profiles 
+```{r}
+save(sd2004, file = "./Clean/sd2004.rda")
+save(sd2007, file = "./Clean/sd2007.rda")
+save(sd2010, file = "./Clean/sd2010.rda")
+save(sd2013, file = "./Clean/sd2013.rda")
+```
+
+
+
