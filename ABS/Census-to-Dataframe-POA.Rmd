@@ -571,14 +571,10 @@ for (i in 1:nrow(POA_2001)) {
 POA <- POA_2001$POA[i]
 excel_ref <- paste0("/Users/Jeremy/Documents/R/Data/Raw/ABS2001/POA_Unzipped/BCP_POA", POA, ".xls")
 
-df <- read_excel(excel_ref, sheet = sheet_ref) %>%
-  filter(!is.na(`AUSTRALIAN BUREAU OF STATISTICS  2001 Census of Population and Housing`))
-
-colnames(df) = c("Type", "Persons")
-df$Persons = as.numeric(df$Persons)
+df <- read_excel(excel_ref, sheet = sheet_ref)
 
 # Single person household (% of households)
-POA_abs2001$SP_House[i] = (as.numeric(df[10,7])/as.numeric(df[17,7])) * 100
+POA_abs2001$SP_House[i] = (as.numeric(df[17,4])/as.numeric(df[17,7])) * 100
 }
 
 ```
