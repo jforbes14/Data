@@ -230,3 +230,18 @@ abs2016 <- abs2016 %>%
   select(-c(BornOverseas, Age15plus))
 
 save(abs2016, file = "./Clean/abs2016.rda")
+
+
+### ------------------------------------------------------ ###
+
+# Combining all Censuses into one data frame
+abs_all <- bind_rows(abs2016 %>% mutate(year = "2016", ID = as.character(ID), 
+                                        Electorate = as.character(Electorate), State = as.factor(State)),
+                     abs2011 %>% mutate(year = "2011", ID = as.character(ID), 
+                                        Electorate = as.character(Electorate), State = as.factor(State)),
+                     abs2006 %>% mutate(year = "2006", ID = as.character(ID), 
+                                        Electorate = as.character(Electorate), State = as.factor(State)),
+                     abs2001 %>% mutate(year = "2001", ID = as.character(ID), 
+                                        Electorate = as.character(Electorate), State = as.factor(State)))
+
+save(abs_all, file = "Clean/abs_all.rda")
