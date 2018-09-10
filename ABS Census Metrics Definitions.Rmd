@@ -1,8 +1,10 @@
 ---
 title: "ABS Census (All) Metrics Definitions"
 author: "Jeremy Forbes - Monash University"
-date: ""
+date: ''
 output:
+  html_document:
+    df_print: paged
   pdf_document: default
 ---
 
