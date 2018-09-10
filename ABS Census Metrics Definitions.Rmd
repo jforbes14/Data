@@ -1,0 +1,203 @@
+---
+title: "ABS Census (All) Metrics Definitions"
+author: "Jeremy Forbes - Monash University"
+date: ""
+output:
+  pdf_document: default
+---
+
+# Metrics definitions for ABS Census data, spanning years 2001-2016
+
+ID: Commonwealth Electoral Divison (CED) number
+
+Electorate: Name of Commonwealth Electoral Division
+
+State: State of CED
+
+Population: Count of persons in CED
+
+### Age
+
+Age00_04: Percentage of population aged 0-4 years
+
+Age05_14: Percentage of population aged 5-14 years
+
+Age15_19: Percentage of population aged 15-19 years
+
+Age20_24: Percentage of population aged 20-24 years
+
+Age25_34: Percentage of population aged 25-34 years
+
+Age35_44: Percentage of population aged 35-44 years
+
+Age45_54: Percentage of population aged 45-54 years
+
+Age55_64: Percentage of population aged 55-64 years
+
+Age65_74: Percentage of population aged 65-74 years
+
+Age75_84: Percentage of population aged 75-84 years
+
+Age85plus: Percentage of population aged 85+ years
+
+### Median Statistics
+
+MedianPersonalIncome: Median weekly personal income
+
+MedianHouseholdIncome: Median weekly household income
+
+MedianFamilyIncome: Median weekly family income
+
+MedianAge: Median age
+
+MedianRent: Median weekly rental payment amount (of those who rent)
+
+MedianLoanPay: Median mortgage loan repayment amount (of mortgage payments)
+
+PersonalIncome_NS: Rate of nonrespondence for questions relating to personal income, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+FamilyIncome_NS: Rate of nonrespondence for questions relating to family income, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+HouseholdlIncome_NS: Rate of nonrespondence for questions relating to household income, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+### Religion
+(2011 does not exclude overseas visitors)
+
+Christianity: Percentage of respondents that identified as Chrisitan (excluding overseas visitors)
+
+Anglican: Percentage of respondents that identified as Anglican (excluding overseas visitors)
+
+Catholic: Percentage of respondents that identified as Catholic (excluding overseas visitors)
+
+Buddhism: Percentage of respondents that identified as Buddist (excluding overseas visitors)
+
+Islam: Percentage of respondents that identified as Muslim (excluding overseas visitors)
+
+Judaism: Percentage of respondents that identified as Jewish (excluding overseas visitors)
+
+NoReligion: Percentage of respondents that identified as "no religion", "athiest" etc.
+
+Other_NonChrist: Percentage of respondents that identified with a religion other than Christianity (excluding overseas visitors)
+
+OtherChrist: Percentage of respondents that identified as Christian, but not Anglican or Catholic (excluding overseas visitors)
+
+Religion_NS: Rate of nonrespondence for questions relating to household income, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+### Language, Heritage, Birthplace and Citizenship
+Indigenous: Percentage of population that identify as Indigenous or Torres Strait Islander
+
+AusCitizen: Percentage of population who are Australian Citizens
+
+Born_Asia: Percentage of respondents born in Asia (includes: Bangladesh, Cambodia, China, Hong Kong, Indonesia, Japan, South Korea, Malaysia, Nepal, Pakistan, Phillipines, Singapore, Sri Lanka, Thailand, Taiwan, Vietnam)
+
+Born_MidEast: Percentage of respondents born in Middle East (includes: Afghanistan, Egypt, Iran, Lebanon, Turkey)
+
+Born_SE_Europe: Percentage of respondents born in South-East Europe (includes: Bosnia and Herzegovina, Croatia, Greece, Macedonia, other South-East Europe)
+
+Born_UK: Percentage of respondents born in the United Kingdom (includes: England, Wales, Scotland, Northern Ireland)
+
+BornElsewhere: Percentage of respondents born overseas in regions over Asia, Middle East, South-East Europe and UK  (includes overseas visitors)
+
+BornOverseas_NS: Rate of nonrespondence for questions relating to country of birth, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+EnglishOnly: Percentage of respondents that speak English only at home
+
+EnglishOnly_NS: Rate of nonrespondence for questions relating to language spoken at home, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+OtherLanguageHome: Percentage of respondents that speak other languages at home (note: this is 100% - EnglishOnly)
+
+### Education
+
+CurrentlyStudying: Percentage of population that are currently studying (Includes 'not stated', as this is not available for 2016)
+
+HighSchool: Percentage of respondents (15 years and over) that have finished High School
+
+HighSchool_NS: Rate of nonrespondence for questions relating to High School completion
+
+Bachelor: Percentage of respondents (15 years and over) that have completed a Bachelors degree
+
+Postgraduate: Percentage of respondents (15 years and over) that have completed a Postgraduate degree
+
+DipCert: Percentage of respondents (15 years and over) that have completed a diploma or certificate
+
+University_NS: Rate of nonrespondence for questions relating to higher education
+
+Note: respondents is calculated by taking population 15 years and over, less question non-responses
+
+### Employment
+
+Unemployed: Unemployment rate (percentage)
+
+LFParticipation: Labour force participation rate (percentage)
+
+Volunteer: Percentage of respondents (15 years and over) that do volunteer work [2006, 2011, 2016]
+
+Volunteer_NS: Rate of nonrespondence for questions relating to volunteer work [2006, 2011, 2016]
+
+EmuneratedElsewhere: Percentage of people who receive emuneration outside of Australia, out of the total population plus overseas visitors [2001 only]
+
+### Industry of Employment
+
+Extractive: Percentage of employed persons (respondents) who work in agriculture, mining, electricity, gas, water or waste
+
+Transformative: Percentage of employed persons (respondents) who work in construction or manufacturing
+
+Distributive: Percentage of employed persons (respondents) who work in wholesale trade, retail trade, transport, post or warehousing
+
+Finance: Percentage of employed persons (respondents) who work in finance or insurance
+
+SocialServ: Percentage of employed persons (respondents) who work in education and training, healthcare, wocial work, community, arts and recreation
+
+### Occupation Groups
+
+ManagerAdminClericalSales: Percentage of employed persons (respondents) who work in management, administration, clerical Duties and sales
+
+Professional: Percentage of employed persons (respondents) who work as a professional
+
+Tradesperson: Percentage of employed persons (respondents) who specialise in a trade
+
+Laborer: Percentage of employed persons (respondents) who work as a laborer
+
+### Family and Relationship
+
+Married: Percentage of people that are married (excluding overseas visitors, including not stated)
+
+DeFacto: Percentage of people that are in a De Facto relationship (excluding overseas visitors, including not stated)
+
+Relationship_NS: Rate of nonrespondence for questions relating to relationship, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+FamilyRatio: Ratio of people in families to the number of total families (ie. average number of people per family)
+
+Couple_NoChild_House: Percentage of households that are made up of an adult couple with no children
+
+Couple_WChild_House: Percentage of households that are made up of an adult couple with children
+
+OneParent_House: Percentage of households that are made up of a single parent with children
+
+SP_House: Percentage of households that are made up of a single person
+
+### Dwelling
+
+Owned: Percentage of dwellings that are owned outright (of respondents)
+
+Mortgage: Percentage of dwellings that are on a mortgage (of respondents)
+
+Renting: Percentage of dwellings that are being rented (of respondents)
+
+PublicHousing: Percentage of dwellings that are owned by the government, and rented out to tenants (of respondents)
+
+NotOwned: Percentage of dwellings (respondents only) that are not owned outright or on a mortgage
+
+Tenure_NS: Rate of nonrespondence for questions relating to tenure, ie. percentage of people who did not answer the question (recorded as "not stated" or "inadequately stated")
+
+DiffAddress: Percentage of respondents who live at a different address to what they did 5 years prior
+
+InternetAccess: Percentage of dwellings with internet access (of respondents) [2006, 2011, 2016]
+
+InternetAccess_NS: Rate of nonrespondence for questions relating to internet access at home [2006, 2011, 2016]
+
+### Other
+
+InternetUse: Percentage of people who used interent in the last week (of respondents) [2001 only]
+
+InternetAccess_NS: Rate of nonrespondence for questions relating to internet use [2001 only]
