@@ -173,6 +173,16 @@ tpp01 <- tcp01 %>%
   rename(PartyAb = PartyFixed) %>% 
   filter(PartyAb == "LNP", !is.na(Swing))
 
+#---- RELABEL PARTY NAMES ----
+
+# Function in aec2016.R
+
+# Apply
+
+fp01 <- fp01 %>% reabbrev_parties()
+tcp01 <- tcp01 %>% reabbrev_parties()
+tpp01 <- tpp01 %>% reabbrev_parties()
+
 
 #---- SAVE ----
 save(fp01, file = "Clean/fp01.rda")

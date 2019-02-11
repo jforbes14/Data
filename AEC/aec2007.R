@@ -10,8 +10,14 @@ all_content <- readLines("./Raw/HouseDopByDivision2007.csv") #to remove first ro
 skip_first <- all_content[-1]
 pref07 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
 
-fp07 <- pref07[seq(2, nrow(pref07), 4), ] %>%
-  filter(CountNumber == 0) #takes only % of votes
+fp07 <- pref07 %>% 
+  filter(CalculationType %in% c("Preference Count", "Preference Percent")) %>% 
+  group_by(StateAb, DivisionID, DivisionNm, CountNumber, BallotPosition, CandidateID, Surname, GivenNm, PartyAb, PartyNm, Elected, HistoricElected) %>% 
+  spread(key = CalculationType, value = CalculationValue) %>%
+  filter(CountNumber == 0) %>% 
+  ungroup() %>% 
+  select(-CountNumber) %>% #takes only % of first preference votes
+  rename(Count = `Preference Count`, Percent = `Preference Percent`)
 
 
 
@@ -49,6 +55,17 @@ tpp07 <- tpp07 %>%
 fp07$DivisionNm <- toupper(fp07$DivisionNm)
 tcp07$DivisionNm <- toupper(tcp07$DivisionNm)
 tpp07$DivisionNm <- toupper(tpp07$DivisionNm)
+
+
+#---- RELABEL PARTY NAMES ----
+
+# Function in aec2016.R
+
+# Apply
+
+fp07 <- fp07 %>% relabel_parties() %>% reabbrev_parties()
+tcp07 <- tcp07 %>% relabel_parties() %>% reabbrev_parties()
+tpp07 <- tpp07 %>% reabbrev_parties()
 
 
 #---- SAVE ----

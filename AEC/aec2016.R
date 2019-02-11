@@ -10,8 +10,14 @@ all_content <- readLines("./Raw/HouseDopByDivision2016.csv") #to remove first ro
 skip_first <- all_content[-1]
 pref16 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
 
-fp16 <- pref16[seq(2, nrow(pref16), 4), ] %>%
-  filter(CountNumber == 0) #takes only % of votes
+fp16 <- pref16 %>% 
+  filter(CalculationType %in% c("Preference Count", "Preference Percent")) %>% 
+  group_by(StateAb, DivisionID, DivisionNm, CountNumber, BallotPosition, CandidateID, Surname, GivenNm, PartyAb, PartyNm, Elected, HistoricElected) %>% 
+  spread(key = CalculationType, value = CalculationValue) %>%
+  filter(CountNumber == 0) %>% 
+  ungroup() %>% 
+  select(-CountNumber) %>% #takes only % of first preference votes
+  rename(Count = `Preference Count`, Percent = `Preference Percent`)
 
 
 #---- TWO CANDIDATE PREFERRED ----
@@ -55,6 +61,41 @@ tpp16 <- tpp16 %>%
 fp16$DivisionNm <- toupper(fp16$DivisionNm)
 tcp16$DivisionNm <- toupper(tcp16$DivisionNm)
 tpp16$DivisionNm <- toupper(tpp16$DivisionNm)
+
+
+#---- FIX NAMES AND ABBREVATIONS OF PARTIES
+
+# Function to re-label parties so that names are common
+relabel_parties <- function(df, PartyNm = PartyNm) {
+  out <- df %>% 
+    ungroup %>% 
+    mutate(PartyNm = ifelse(
+      PartyNm %in% c("Australian Labor Party (Northern Territory) Branch",  "Labor"), "Australian Labor Party",
+      ifelse(PartyNm %in% c("Country Liberals (NT)", "Liberal National Party of Queensland", "The Nationals", "National Party"), "Liberal", 
+        ifelse(PartyNm %in% c("The Greens (WA)"), "The Greens", 
+          ifelse(PartyNm %in% c(""), "Informal", PartyNm
+        )))))
+  return(out)
+}
+
+# Function to reabbreviate parties
+
+reabbrev_parties <- function(df, PartyNm = PartyNm) {
+  out <- df %>%
+    ungroup %>% 
+    mutate(PartyAb = ifelse(PartyAb %in% c("CLR", "ALP"), "ALP", 
+      ifelse(PartyAb %in% c("CLP", "LP", "LNP", "NP"), "LNP", 
+        ifelse(PartyAb %in% c("GRN", "GWA", "TG"), "GRN", 
+          ifelse(PartyAb %in% c("HAN","ON"), "ON",
+            PartyAb)))))
+  return(out)
+}
+
+# Apply
+
+fp16 <- fp16 %>% relabel_parties() %>% reabbrev_parties()
+tcp16 <- tcp16 %>% relabel_parties() %>% reabbrev_parties()
+tpp16 <- tpp16 %>% reabbrev_parties()
 
 
 #---- SAVE ----

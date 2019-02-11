@@ -13,13 +13,18 @@ pref04 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors =
 pref04 %>% 
   group_by(DivisionNm) %>% 
   filter(CountNumber == max(CountNumber)) %>% 
-  filter(CalculationType == "Preference Percent") %>% View
+  filter(CalculationType == "Preference Percent") 
 
-fp04 <- pref04[seq(2, nrow(pref04), 4), ] %>%
-  filter(CountNumber == 0) %>% #takes only % of votes
+fp04 <- pref04 %>% 
+  filter(CalculationType %in% c("Preference Count", "Preference Percent")) %>% 
   mutate(Elected = ifelse(SittingMemberFl == "#", "Y", "N")) %>% 
-  select(-SittingMemberFl)
-
+  select(-SittingMemberFl) %>% 
+  group_by(StateAb, DivisionID, DivisionNm, CountNumber, BallotPosition, CandidateID, Surname, GivenNm, PartyAb, PartyNm, Elected) %>% 
+  spread(key = CalculationType, value = CalculationValue) %>%
+  filter(CountNumber == 0) %>% 
+  ungroup() %>% 
+  select(-CountNumber) %>% #takes only % of first preference votes
+  rename(Count = `Preference Count`, Percent = `Preference Percent`)
 
 
 #--- TWO CANDIDATE PREFERRED ---#
@@ -58,6 +63,17 @@ tpp04 <- tpp04 %>%
 fp04$DivisionNm <- toupper(fp04$DivisionNm)
 tcp04$DivisionNm <- toupper(tcp04$DivisionNm)
 tpp04$DivisionNm <- toupper(tpp04$DivisionNm)
+
+
+#---- RELABEL PARTY NAMES ----
+
+# Function in aec2016.R
+
+# Apply
+
+fp04 <- fp04 %>% relabel_parties() %>% reabbrev_parties()
+tcp04 <- tcp04 %>% relabel_parties() %>% reabbrev_parties()
+tpp04 <- tpp04 %>% reabbrev_parties()
 
 
 #---- SAVE ----
