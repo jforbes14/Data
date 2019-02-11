@@ -77,8 +77,8 @@ pollplace_01 <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/DB-electionmaps/boo
 
 # -------------------------------------
 
-# Function to re-label parties into larger parties and other
-relabel_parties <- function(df, PartyAb = PartyAb) {
+# Function to group parties into larger parties and other
+group_parties <- function(df, PartyAb = PartyAb) {
   out <- df %>% 
     mutate(PartyAb = ifelse(
       PartyAb %in% c("CLP", "LP", "LNP", "NP"), "LNP", 
@@ -90,6 +90,17 @@ relabel_parties <- function(df, PartyAb = PartyAb) {
   return(out)
 }
 
+# Function to re-label parties so that names are common
+relabel_parties <- function(df, PartyNm = PartyNm) {
+  out <- df %>% 
+    mutate(PartyNm = ifelse(
+      PartyNm %in% c("Australian Labor Party (Northern Territory) Branch",  "Labor"), "Australian Labor Party",
+      ifelse(PartyNm %in% c("Country Liberals (NT)", "Liberal National Party of Queensland", "The Nationals", "National Party"), "Liberal", 
+        ifelse(PartyNm %in% c("The Greens (WA)"), "The Greens", PartyNm
+          ))))
+  return(out)
+}
+
 # -------------------------------------
 
 # Download polling place division of preferences, two party preferred and two candidate preferred (where available)
@@ -98,18 +109,7 @@ relabel_parties <- function(df, PartyAb = PartyAb) {
 # 2016
 
 tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
-
+  relabel_parties() 
 
 tpp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTppByPollingPlaceDownload-20499.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -125,35 +125,12 @@ fp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% 
-  mutate(PartyAb = ifelse(is.na(PartyAb), "Informal", PartyAb)) %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(FP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, FP) %>% 
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    Informal = replace_na(Informal, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+  relabel_parties() 
   
 # 2013
 
 tcp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-17496.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = 0, # No One Nation in TCP for 2013
-    Other = replace_na(Other, 0))
-
+  group_parties() 
 
 tpp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTppByPollingPlaceDownload-17496.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -169,34 +146,12 @@ fp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% 
-  mutate(PartyAb = ifelse(is.na(PartyAb), "Informal", PartyAb)) %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(FP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, FP) %>% 
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    Informal = replace_na(Informal, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+  group_parties()
 
 # 2010
 
 tcp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-15508.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = 0,  # No One Nation in TCP for 2010
-    Other = replace_na(Other, 0))
+  relabel_parties() 
 
 tpp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseTppByPollingPlaceDownload-15508.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -212,34 +167,12 @@ fp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% 
-  mutate(PartyAb = ifelse(is.na(PartyAb), "Informal", PartyAb)) %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(FP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, FP) %>% 
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    Informal = replace_na(Informal, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+  relabel_parties() 
 
 # 2007
 
 tcp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-13745.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = 0, # No One Nation in TCP for 2007
-    Other = 0) # No other parties in TCP for 2007
+  relabel_parties() 
 
 tpp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseTppByPollingPlaceDownload-13745.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -255,34 +188,12 @@ fp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% 
-  mutate(PartyAb = ifelse(is.na(PartyAb), "Informal", PartyAb)) %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(FP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, FP) %>% 
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    Informal = replace_na(Informal, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+  relabel_parties()
 
 # 2004
 
 tcp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTcpByCandidateByPollingPlaceDownload-12246.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = 0, # No Greens in TCP for 2004
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = 0, # No One Nation in TCP for 2004
-    Other = 0) # No other parties in TCP for 2004
+  relabel_parties() 
 
 tpp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTppByPollingPlaceDownload-12246.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -298,19 +209,7 @@ fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% 
-  mutate(PartyAb = ifelse(is.na(PartyAb), "Informal", PartyAb)) %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(FP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, FP) %>% 
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    Informal = replace_na(Informal, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+  relabel_parties()
 
 # 2001
 
@@ -342,18 +241,18 @@ tpp_pp01 <- votes_pp01 %>%
 # To change to WIDE format
 # Independents are grouped together, and minor parties are lumped into "Other"
 
-tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
-  relabel_parties() %>% 
-  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-  summarise(TCP = sum(OrdinaryVotes)) %>% 
-  spread(PartyAb, TCP) %>%
-  mutate(ALP = replace_na(ALP, 0), 
-    GRN = replace_na(GRN, 0), 
-    IND = replace_na(IND, 0), 
-    LNP = replace_na(LNP, 0), 
-    ON = replace_na(ON, 0), 
-    Other = replace_na(Other, 0))
+#tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
+#  group_parties() %>% 
+#  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
+#  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
+#  summarise(TCP = sum(OrdinaryVotes)) %>% 
+#  spread(PartyAb, TCP) %>%
+#  mutate(ALP = replace_na(ALP, 0), 
+#    GRN = replace_na(GRN, 0), 
+#    IND = replace_na(IND, 0), 
+#    LNP = replace_na(LNP, 0), 
+#    ON = replace_na(ON, 0), 
+#    Other = replace_na(Other, 0))
 
 # -------------------------------------
 
