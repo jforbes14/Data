@@ -45,19 +45,6 @@ add6 <- left_join(add5 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Lat
 add7 <- left_join(add6 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
   pollplace_16 %>% select(PollingPlaceNm, PremisesNm, PremisesPostCode, Latitude, Longitude), by = c("PremisesNm", "PremisesPostCode", "PollingPlaceNm"))
 
-# For the 600 without a location, default to the postcode lat and long
-# http://www.corra.com.au/downloads/Australian_Post_Codes_Lat_Lon.zip
-
-postcodes <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/Australian_Post_Codes_Lat_Lon.csv")
-
-postcodes <- postcodes[match(unique(postcodes$postcode), postcodes$postcode),]
-
-add8 <- left_join(add7 %>% filter(is.na(Longitude)) %>% 
-    select(-c(Longitude, Latitude)) %>% rename(postcode = PremisesPostCode),
-  postcodes %>% rename(Latitude = lat, Longitude = lon) 
-  %>% select(postcode, Latitude, Longitude), by = "postcode") %>% 
-  mutate(postcode = "Yes")
-
 # Now combine into (almost) complete dataset
 
 pollplace_04 <- pollplace_04_blank %>% filter(!is.na(Longitude)) %>% 
@@ -67,9 +54,21 @@ pollplace_04 <- pollplace_04_blank %>% filter(!is.na(Longitude)) %>%
   bind_rows(add4 %>% filter(!is.na(Longitude))) %>% 
   bind_rows(add5 %>% filter(!is.na(Longitude))) %>% 
   bind_rows(add6 %>% filter(!is.na(Longitude))) %>% 
-  bind_rows(add7 %>% filter(!is.na(Longitude))) %>%
-  mutate(postcode = "No") %>% 
-  bind_rows(add8 %>% filter(!is.na(Longitude)))
+  bind_rows(add7)
+
+# For the 600 without a location, an option is to default to the postcode lat and long
+# http://www.corra.com.au/downloads/Australian_Post_Codes_Lat_Lon.zip
+
+#postcodes <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/Australian_Post_Codes_Lat_Lon.csv")
+
+#postcodes <- postcodes[match(unique(postcodes$postcode), postcodes$postcode),]
+
+#add8 <- left_join(add7 %>% filter(is.na(Longitude)) %>% 
+#    select(-c(Longitude, Latitude)) %>% rename(postcode = PremisesPostCode),
+#  postcodes %>% rename(Latitude = lat, Longitude = lon) 
+#  %>% select(postcode, Latitude, Longitude), by = "postcode") %>% 
+#  mutate(postcode = "Yes")
+
 
 # 2001
 # Taken from https://pappubahry.com/electionmaps/#download
@@ -109,7 +108,8 @@ reabbrev_parties <- function(df, PartyNm = PartyNm) {
       ifelse(PartyAb %in% c("CLP", "LP", "LNP", "NP"), "LNP", 
         ifelse(PartyAb %in% c("GRN", "GWA", "TG"), "GRN", 
           ifelse(PartyAb %in% c("HAN","ON"), "ON",
-              PartyAb)))))
+            ifelse(is.na(PartyAb), "Infl", 
+              PartyAb))))))
   return(out)
 }
 
@@ -142,7 +142,7 @@ fp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseSta
 # 2013
 
 tcp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-17496.csv", skip = 1) %>% 
-  group_parties() 
+  relabel_parties() %>% reabbrev_parties() 
 
 tpp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTppByPollingPlaceDownload-17496.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
@@ -157,8 +157,8 @@ fp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-TAS.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-NT.csv", skip = 1)) %>% 
-  bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-ACT.csv", skip = 1)) %>% 
-  group_parties()
+  bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-ACT.csv", skip = 1))  %>% 
+  relabel_parties() %>% reabbrev_parties() 
 
 # 2010
 
@@ -206,7 +206,7 @@ fp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseSta
 
 tcp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTcpByCandidateByPollingPlaceDownload-12246.csv", skip = 1) %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
-  mutate(HistoricElected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
+  mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
   select(-SittingMemberFl)
 
 tpp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTppByPollingPlaceDownload-12246.csv", skip = 1) %>%
@@ -224,7 +224,7 @@ fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-ACT.csv", skip = 1)) %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
-  mutate(HistoricElected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
+  mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
   select(-SittingMemberFl)
 
 # 2001
@@ -240,17 +240,18 @@ votes_pp01 <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/pollingplace2001.csv"
     HAN_prim = replace_na(HAN_prim, 0)) %>% 
   mutate(LNP = LP_prim + NP_prim) %>% 
   select(-c(LP_prim, NP_prim, DEM_prim, TCP_1, TCP_2)) %>% 
-  rename(StateAb = State, DivisionID = Seat,PollingPlace = Booth, 
+  rename(StateAb = State, DivisionNm = Seat,PollingPlace = Booth, 
     ALP = ALP_prim, ON = HAN_prim, IND = IND_prim, GRN = GRN_prim,
-    Latitude = Lat, Longitude = Long) %>% 
+    Latitude = Lat, Longitude = Long, TotalVotes = Formal_votes) %>% 
   mutate(Other = round(100 - ALP - LNP - GRN - IND, 2))
 
 fp_pp01 <- votes_pp01 %>% 
   select(-c(ALP_2PP, LNP_2PP))
 
 tpp_pp01 <- votes_pp01 %>% 
-  select(-c(ALP, LNP, GRN, Other, IND)) %>% 
-  rename(ALP = ALP_2PP, LNP = LNP_2PP)
+  select(-c(ALP, LNP, GRN, Other, IND, ON)) %>% 
+  rename(ALP_Percent = ALP_2PP, LNP_Percent = LNP_2PP) %>% 
+  mutate(ALP_Votes = TotalVotes * ALP_Percent / 100, LNP_Votes = TotalVotes * LNP_Percent / 100)
 
 # -------------------------------------
 
