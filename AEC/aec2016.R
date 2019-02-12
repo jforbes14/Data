@@ -93,10 +93,20 @@ reabbrev_parties <- function(df, PartyNm = PartyNm) {
   return(out)
 }
 
+# Make all character fields upper case
+chr_upper <- function(df) {
+  fc_cols <- sapply(df, class) == 'factor'
+  df[, fc_cols] <- lapply(df[, fc_cols], as.character)
+  
+  ch_cols <- sapply(df, class) == 'character'
+  df[, ch_cols] <- lapply(df[, ch_cols], toupper)
+  return(df)
+}
+
 # Apply
 
-fp16 <- fp16 %>% relabel_parties() %>% reabbrev_parties()
-tcp16 <- tcp16 %>% relabel_parties() %>% reabbrev_parties()
+fp16 <- fp16 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
+tcp16 <- tcp16 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
 
 
 #---- SAVE ----

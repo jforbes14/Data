@@ -67,8 +67,8 @@ tpp07$DivisionNm <- toupper(tpp07$DivisionNm)
 
 # Apply
 
-fp07 <- fp07 %>% relabel_parties() %>% reabbrev_parties()
-tcp07 <- tcp07 %>% relabel_parties() %>% reabbrev_parties()
+fp07 <- fp07 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
+tcp07 <- tcp07 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
 
 
 #---- SAVE ----

@@ -65,8 +65,8 @@ tpp13$DivisionNm <- toupper(tpp13$DivisionNm)
 
 # Apply
 
-fp13 <- fp13 %>% relabel_parties() %>% reabbrev_parties()
-tcp13 <- tcp13 %>% relabel_parties() %>% reabbrev_parties()
+fp13 <- fp13 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
+tcp13 <- tcp13 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
 
 #---- SAVE ----
 save(fp13, file = "Clean/fp13.rda")

@@ -74,9 +74,9 @@ tpp04$DivisionNm <- toupper(tpp04$DivisionNm)
 
 # Apply
 
-fp04 <- fp04 %>% relabel_parties() %>% reabbrev_parties()
-tcp04 <- tcp04 %>% relabel_parties() %>% reabbrev_parties()
-
+fp04 <- fp04 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
+tcp04 <- tcp04 %>% relabel_parties() %>% reabbrev_parties() %>% chr_upper()
+tpp04 <- tpp04 %>% chr_upper()
 
 #---- SAVE ----
 save(fp04, file = "Clean/fp04.rda")

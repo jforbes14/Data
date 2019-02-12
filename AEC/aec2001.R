@@ -183,9 +183,9 @@ tpp01 <- tcp01 %>%
 
 # Apply
 
-fp01 <- fp01 %>% reabbrev_parties()
-tcp01 <- tcp01 %>% reabbrev_parties()
-tpp01 <- tpp01 %>% reabbrev_parties()
+fp01 <- fp01 %>% reabbrev_parties() %>% chr_upper()
+tcp01 <- tcp01 %>% reabbrev_parties() %>% chr_upper()
+tpp01 <- tpp01 %>% reabbrev_parties() %>% chr_upper()
 
 
 #---- SAVE ----

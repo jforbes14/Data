@@ -113,6 +113,13 @@ reabbrev_parties <- function(df, PartyNm = PartyNm) {
   return(out)
 }
 
+# Make all character fields upper case
+chr_upper <- function(df) {
+  cols <- sapply(df, class) == 'character'
+  df[, cols] <- lapply(df[, cols], toupper)
+  return(df)
+}
+
 # -------------------------------------
 
 # Download polling place division of preferences, two party preferred and two candidate preferred (where available)
@@ -121,13 +128,14 @@ reabbrev_parties <- function(df, PartyNm = PartyNm) {
 # 2016
 
 tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% chr_upper()
 
 tpp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTppByPollingPlaceDownload-20499.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
     LNP_Percent = `Liberal/National Coalition Percentage`,
     ALP_Votes = `Australian Labor Party Votes`,
-    ALP_Percent = `Australian Labor Party Percentage`)
+    ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  chr_upper()
 
 fp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-NSW.csv", skip = 1) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-VIC.csv", skip = 1)) %>% 
@@ -137,18 +145,21 @@ fp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties()  %>% 
+  chr_upper()
   
 # 2013
 
 tcp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-17496.csv", skip = 1) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper() 
 
 tpp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTppByPollingPlaceDownload-17496.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
     LNP_Percent = `Liberal/National Coalition Percentage`,
     ALP_Votes = `Australian Labor Party Votes`,
-    ALP_Percent = `Australian Labor Party Percentage`)
+    ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  chr_upper()
 
 fp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-NSW.csv", skip = 1) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-VIC.csv", skip = 1)) %>% 
@@ -158,18 +169,21 @@ fp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-ACT.csv", skip = 1))  %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper() 
 
 # 2010
 
 tcp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-15508.csv", skip = 1) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper() 
 
 tpp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseTppByPollingPlaceDownload-15508.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
     LNP_Percent = `Liberal/National Coalition Percentage`,
     ALP_Votes = `Australian Labor Party Votes`,
-    ALP_Percent = `Australian Labor Party Percentage`)
+    ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  chr_upper()
 
 fp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-NSW.csv", skip = 1) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-VIC.csv", skip = 1)) %>% 
@@ -179,18 +193,21 @@ fp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-15508-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper() 
 
 # 2007
 
 tcp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-13745.csv", skip = 1) %>% 
-  relabel_parties() %>% reabbrev_parties() 
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper() 
 
 tpp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseTppByPollingPlaceDownload-13745.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
     LNP_Percent = `Liberal/National Coalition Percentage`,
     ALP_Votes = `Australian Labor Party Votes`,
-    ALP_Percent = `Australian Labor Party Percentage`)
+    ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  chr_upper()
 
 fp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-NSW.csv", skip = 1) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-VIC.csv", skip = 1)) %>% 
@@ -200,20 +217,23 @@ fp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-WA.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-NT.csv", skip = 1)) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-ACT.csv", skip = 1)) %>% 
-  relabel_parties() %>% reabbrev_parties()
+  relabel_parties() %>% reabbrev_parties() %>% 
+  chr_upper()
 
 # 2004
 
 tcp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTcpByCandidateByPollingPlaceDownload-12246.csv", skip = 1) %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
   mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
-  select(-SittingMemberFl)
+  select(-SittingMemberFl) %>% 
+  chr_upper()
 
 tpp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTppByPollingPlaceDownload-12246.csv", skip = 1) %>%
   rename(LNP_Votes = `Liberal/National Coalition Votes`,
     LNP_Percent = `Liberal/National Coalition Percentage`,
     ALP_Votes = `Australian Labor Party Votes`,
-    ALP_Percent = `Australian Labor Party Percentage`)
+    ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  chr_upper()
 
 fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-NSW.csv", skip = 1) %>% 
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-VIC.csv", skip = 1)) %>% 
@@ -225,7 +245,8 @@ fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-12246-ACT.csv", skip = 1)) %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
   mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
-  select(-SittingMemberFl)
+  select(-SittingMemberFl) %>% 
+  chr_upper()
 
 # 2001
 
@@ -243,15 +264,18 @@ votes_pp01 <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/pollingplace2001.csv"
   rename(StateAb = State, DivisionNm = Seat,PollingPlace = Booth, 
     ALP = ALP_prim, ON = HAN_prim, IND = IND_prim, GRN = GRN_prim,
     Latitude = Lat, Longitude = Long, TotalVotes = Formal_votes) %>% 
-  mutate(Other = round(100 - ALP - LNP - GRN - IND, 2))
+  mutate(Other = round(100 - ALP - LNP - GRN - IND, 2)) %>% 
+  chr_upper()
 
 fp_pp01 <- votes_pp01 %>% 
-  select(-c(ALP_2PP, LNP_2PP))
+  select(-c(ALP_2PP, LNP_2PP)) %>% 
+  chr_upper()
 
 tpp_pp01 <- votes_pp01 %>% 
   select(-c(ALP, LNP, GRN, Other, IND, ON)) %>% 
   rename(ALP_Percent = ALP_2PP, LNP_Percent = LNP_2PP) %>% 
-  mutate(ALP_Votes = TotalVotes * ALP_Percent / 100, LNP_Votes = TotalVotes * LNP_Percent / 100)
+  mutate(ALP_Votes = TotalVotes * ALP_Percent / 100, LNP_Votes = TotalVotes * LNP_Percent / 100) %>% 
+  chr_upper()
 
 # -------------------------------------
 
