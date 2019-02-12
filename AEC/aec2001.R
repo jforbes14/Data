@@ -91,7 +91,8 @@ rownames(fp01) <- 1:nrow(fp01)
 fp01$PartyAb <- substring(fp01$PartyAb, 2, nchar(fp01$PartyAb)-1)
 fp01$PartyAb[is.na(fp01$PartyAb)] <- "IND"
 
-
+# Rename
+fp01 <- fp01 %>% rename(Percent = CalculationValue)
 
 
 
@@ -143,7 +144,8 @@ for (j in 1:length(states)) {
 }
 
 #Remove first row of zeros, and reset rownames
-tcp01 <- tcp01[-1,]
+tcp01 <- tcp01[-1,] %>% 
+  rename(Percent = CalculationValue)
 rownames(tcp01) <- 1:nrow(tcp01)
 tcp01$DivisionNm <- as.character(tcp01$DivisionNm)
 for (i in 1:nrow(tcp01)) {
@@ -153,6 +155,8 @@ for (i in 1:nrow(tcp01)) {
     tcp01$DivisionNm[i] <- strsplit(tcp01$DivisionNm[i], " ")[[1]][1]
   }
 }
+
+
 
 
 #--- TWO PARTY PREFERRED ---#

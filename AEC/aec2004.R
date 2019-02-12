@@ -6,9 +6,7 @@ library(tidyverse)
 
 #--- FIRST PREFERENCES ---#
 
-all_content <- readLines("./Raw/HouseDopByDivision2004.csv") #to remove first row and load correct column headers
-skip_first <- all_content[-1]
-pref04 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
+pref04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseDopByDivisionDownload-12246.csv", skip = 1)
 
 pref04 %>% 
   group_by(DivisionNm) %>% 
@@ -17,37 +15,42 @@ pref04 %>%
 
 fp04 <- pref04 %>% 
   filter(CalculationType %in% c("Preference Count", "Preference Percent")) %>% 
-  mutate(Elected = ifelse(SittingMemberFl == "#", "Y", "N")) %>% 
+  mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
   select(-SittingMemberFl) %>% 
   group_by(StateAb, DivisionID, DivisionNm, CountNumber, BallotPosition, CandidateID, Surname, GivenNm, PartyAb, PartyNm, Elected) %>% 
   spread(key = CalculationType, value = CalculationValue) %>%
   filter(CountNumber == 0) %>% 
   ungroup() %>% 
   select(-CountNumber) %>% #takes only % of first preference votes
-  rename(Count = `Preference Count`, Percent = `Preference Percent`)
+  rename(OrdinaryVotes = `Preference Count`, Percent = `Preference Percent`)
 
 
 #--- TWO CANDIDATE PREFERRED ---#
 # Distribution of preferences to the two candidates who came first and second in the election
-tcp04 <- pref04[seq(2, nrow(pref04), 4), ] %>%
+tcp04 <- pref04 %>% 
   group_by(DivisionID, PartyAb) %>%
-  filter(CountNumber == max(CountNumber)) %>%
+  filter(CountNumber == max(CountNumber), CalculationType %in% c("Preference Count", "Preference Percent")) %>%
   arrange() %>%
   filter(CalculationValue != 0) %>% 
-  mutate(Elected = ifelse(SittingMemberFl == "#", "Y", "N")) %>% 
+  spread(CalculationType, CalculationValue) %>% 
+  rename(OrdinaryVotes = `Preference Count`, Percent = `Preference Percent`) %>% 
+  select(-CountNumber) %>% 
+  mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
   select(-SittingMemberFl)
+
 
 
 
 #--- TWO PARTY PREFERRED ---#
 # Preferences distribution only to Labor (ALP) and Coalition (LP, NP, LNQ, CLP)
 # A distribution of preferences where, by convention, comparisons are made between the ALP and the leading Liberal/National candidates. In seats where the final two candidates are not from the ALP and the Liberal or National parties, a two party preferred count may be conducted to find the result of preference flows to the ALP and the Liberal/National candidates.
-all_content <- readLines("./Raw/HouseTppByDivision2004.csv") #to remove first row and load correct column headers
-skip_first <- all_content[-1]
-tpp04 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
 
-tpp04 <- tpp04 %>%
-  arrange(DivisionID)
+tpp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseTppByDivisionDownload-12246.csv", skip = 1) %>%
+  arrange(DivisionID) %>% 
+  rename(LNP_Votes = `Liberal/National Coalition Votes`, LNP_Percent = `Liberal/National Coalition Percentage`,
+    ALP_Votes = `Australian Labor Party Votes`, ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  select(-PartyAb)
+
 
 
 
@@ -73,7 +76,6 @@ tpp04$DivisionNm <- toupper(tpp04$DivisionNm)
 
 fp04 <- fp04 %>% relabel_parties() %>% reabbrev_parties()
 tcp04 <- tcp04 %>% relabel_parties() %>% reabbrev_parties()
-tpp04 <- tpp04 %>% reabbrev_parties()
 
 
 #---- SAVE ----

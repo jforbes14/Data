@@ -6,9 +6,7 @@ library(tidyverse)
 
 #--- FIRST PREFERENCES ---#
 
-all_content <- readLines("./Raw/HouseDopByDivision2010.csv") #to remove first row and load correct column headers
-skip_first <- all_content[-1]
-pref10 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
+pref10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseDopByDivisionDownload-15508.csv", skip = 1)
 
 fp10 <- pref10 %>% 
   filter(CalculationType %in% c("Preference Count", "Preference Percent")) %>% 
@@ -17,28 +15,35 @@ fp10 <- pref10 %>%
   filter(CountNumber == 0) %>% 
   ungroup() %>% 
   select(-CountNumber) %>% #takes only % of first preference votes
-  rename(Count = `Preference Count`, Percent = `Preference Percent`)
+  rename(OrdinaryVotes = `Preference Count`, Percent = `Preference Percent`)
 
 
 #--- TWO CANDIDATE PREFERRED ---#
 # Distribution of preferences to the two candidates who came first and second in the election
-tcp10 <- pref10[seq(2, nrow(pref10), 4), ] %>%
+tcp10 <- pref10 %>% 
   group_by(DivisionID, PartyAb) %>%
-  filter(CountNumber == max(CountNumber)) %>%
+  filter(CountNumber == max(CountNumber), CalculationType %in% c("Preference Count", "Preference Percent")) %>%
   arrange() %>%
-  filter(CalculationValue != 0)
+  filter(CalculationValue != 0) %>% 
+  spread(CalculationType, CalculationValue) %>% 
+  rename(OrdinaryVotes = `Preference Count`, Percent = `Preference Percent`) %>% 
+  select(-CountNumber) %>% 
+  mutate(Elected = ifelse(is.na(SittingMemberFl), "N", "Y")) %>% 
+  select(-SittingMemberFl)
+
 
 
 
 #--- TWO PARTY PREFERRED ---#
 # Preferences distribution only to Labor (ALP) and Coalition (LP, NP, LNQ, CLP)
 # A distribution of preferences where, by convention, comparisons are made between the ALP and the leading Liberal/National candidates. In seats where the final two candidates are not from the ALP and the Liberal or National parties, a two party preferred count may be conducted to find the result of preference flows to the ALP and the Liberal/National candidates.
-all_content <- readLines("./Raw/HouseTppByDivision2010.csv") #to remove first row and load correct column headers
-skip_first <- all_content[-1]
-tpp10 <- read.csv(textConnection(skip_first), header = TRUE, stringsAsFactors = FALSE)
 
-tpp10 <- tpp10 %>%
-  arrange(DivisionID)
+tpp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseTppByDivisionDownload-15508.csv", skip = 1) %>%
+  arrange(DivisionID) %>% 
+  rename(LNP_Votes = `Liberal/National Coalition Votes`, LNP_Percent = `Liberal/National Coalition Percentage`,
+    ALP_Votes = `Australian Labor Party Votes`, ALP_Percent = `Australian Labor Party Percentage`) %>% 
+  select(-PartyAb)
+
 
 
 
@@ -64,7 +69,6 @@ tpp10$DivisionNm <- toupper(tpp10$DivisionNm)
 
 fp10 <- fp10 %>% relabel_parties() %>% reabbrev_parties()
 tcp10 <- tcp10 %>% relabel_parties() %>% reabbrev_parties()
-tpp10 <- tpp10 %>% reabbrev_parties()
 
 
 #---- SAVE ----
