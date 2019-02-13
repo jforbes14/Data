@@ -75,8 +75,9 @@ relabel_parties <- function(df, PartyNm = PartyNm) {
       PartyNm %in% c("Australian Labor Party (Northern Territory) Branch",  "Labor"), "Australian Labor Party",
       ifelse(PartyNm %in% c("Country Liberals (NT)", "Liberal National Party of Queensland", "The Nationals", "National Party"), "Liberal", 
         ifelse(PartyNm %in% c("The Greens (WA)"), "The Greens", 
-          ifelse(PartyNm %in% c(""), "Informal", PartyNm
-        )))))
+          ifelse(PartyNm %in% c(""), "Informal", 
+            ifelse(is.na(PartyNm), "Independent", PartyNm
+        ))))))
   return(out)
 }
 
@@ -89,7 +90,8 @@ reabbrev_parties <- function(df, PartyNm = PartyNm) {
       ifelse(PartyAb %in% c("CLP", "LP", "LNP", "NP"), "LNP", 
         ifelse(PartyAb %in% c("GRN", "GWA", "TG"), "GRN", 
           ifelse(PartyAb %in% c("HAN","ON"), "ON",
-            PartyAb)))))
+            ifelse(is.na(PartyAb), "INFL", 
+              PartyAb))))))
   return(out)
 }
 
