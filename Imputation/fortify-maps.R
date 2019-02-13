@@ -68,11 +68,22 @@ fortified_2001 <- left_join(fortified_2001, nms, by="id") %>%
   mutate(Election_Division =  toupper(CED_NAME_2001)) %>% 
   select(-CED_NAME_2001)
 
+## Census 2011
+fortified_2011 <- ggplot2::fortify(simp_abs11) %>% 
+  mutate(year = "2011",
+         group = paste0("g.", group),
+         piece = paste0("p.", piece))
+nms <- simp_abs11@data %>% select(CED_NAME, long_c, lat_c)
+nms$id <- as.character(1:150)
+fortified_2011 <- left_join(fortified_2011, nms, by="id") %>% 
+  mutate(Election_Division =  toupper(CED_NAME)) %>% 
+  select(-CED_NAME)
 
 ## Save
 save(fortified_2001, file = "Clean/Maps/fortified_2001.rda")
 save(fortified_2004, file = "Clean/Maps/fortified_2004.rda")
 save(fortified_2007, file = "Clean/Maps/fortified_2007.rda")
 save(fortified_2010, file = "Clean/Maps/fortified_2010.rda")
+save(fortified_2011, file = "Clean/Maps/fortified_2011.rda")
 save(fortified_2013, file = "Clean/Maps/fortified_2013.rda")
 save(fortified_2016, file = "Clean/Maps/fortified_2016.rda")
