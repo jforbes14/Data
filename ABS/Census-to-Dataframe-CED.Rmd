@@ -1627,6 +1627,19 @@ abs2006 <- abs2006 %>%
 abs2006_e07 <- abs2006_e07 %>%
   mutate(BornElsewhere = BornOverseas - Born_MidEast - Born_SE_Europe - Born_UK) %>% 
   select(-BornOverseas)
+
+# Rename Electorate Column to match election data
+abs2001 <- abs2001 %>% 
+  rename(DivisionNm = Electorate) %>% 
+  select(ID, DivisionNm, State, Population, Area, everything())
+
+abs2006 <- abs2006 %>% 
+  rename(DivisionNm = Electorate) %>% 
+  select(ID, DivisionNm, State, Population, Area, everything())
+
+abs2006_e07 <- abs2006_e07 %>% 
+  rename(DivisionNm = Electorate) %>% 
+  select(ID, DivisionNm, State, Population, Area, everything())
 ```
 
 
@@ -1634,13 +1647,13 @@ abs2006_e07 <- abs2006_e07 %>%
 ```{r}
 require(readr)
 
-abs2001$Electorate <- as.character(abs2001$Electorate)
-abs2001$Electorate[117] <- "O'Connor"
-abs2001$Electorate <- toupper(abs2001$Electorate)
-abs2001$Electorate <- as.factor(abs2001$Electorate)
+abs2001$DivisionNm <- as.character(abs2001$DivisionNm)
+abs2001$DivisionNm[117] <- "O'Connor"
+abs2001$DivisionNm <- toupper(abs2001$DivisionNm)
+abs2001$DivisionNm <- as.factor(abs2001$DivisionNm)
 
-abs2006$Electorate <- toupper(abs2006$Electorate)
-abs2006_e07$Electorate <- toupper(abs2006_e07$Electorate)
+abs2006$DivisionNm <- toupper(abs2006$DivisionNm)
+abs2006_e07$DivisionNm <- toupper(abs2006_e07$DivisionNm)
 
 
 save(abs2001, file = "/Users/Jeremy/Documents/R/Data/Clean/abs2001.rda")

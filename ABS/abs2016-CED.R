@@ -204,7 +204,7 @@ CED <- read_excel("./Raw-Supplement/tidy_CED16.xlsx")
 Area_sqkm <- read_csv("./Raw/2016 Census GCP Commonwealth Electoral Divisions for AUST/2016Census_geog_desc_1st_and_2nd_release.csv")
 
 new <- new %>% 
-  left_join(CED %>% rename(ID = CED) %>% select(-X__1), by = "ID")
+  left_join(CED %>% rename(ID = CED) %>% select(-"..1"), by = "ID")
 
 abs2016 <- new[-c(48,49,87,88,119,120,132,133,150,151,157,158,161,162,165:168),c(110:ncol(new))] %>%
   mutate(InternetUse_NS = 0)
@@ -223,6 +223,11 @@ abs2016 <- abs2016 %>%
 # Order electorate alphabetically
 abs2016 <- abs2016 %>% 
   arrange(Electorate)
+
+# Rename Electorate Column to match election data
+abs2016 <- abs2016 %>% 
+  rename(DivisionNm = Electorate) %>% 
+  select(ID, DivisionNm, State, Population, Area, everything())
 
 # Change BornOverseas to BornElsewhere
 abs2016 <- abs2016 %>%

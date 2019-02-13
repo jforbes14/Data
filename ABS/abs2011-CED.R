@@ -203,7 +203,12 @@ abs2011 <- abs2011 %>%
 # Change BornOverseas to BornElsewhere
 abs2011 <- abs2011 %>%
   mutate(BornElsewhere = BornOverseas - Born_MidEast - Born_SE_Europe - Born_UK) %>% 
-  select(-BornOverseas)
+  select(-BornOverseas) 
+
+# Rename Electorate Column to match election data
+abs2011 <- abs2011 %>% 
+  rename(DivisionNm = Electorate) %>% 
+  select(ID, DivisionNm, State, Population, Area, everything())
 
 
 # Save
