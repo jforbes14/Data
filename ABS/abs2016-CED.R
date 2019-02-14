@@ -94,42 +94,42 @@ new <- G1_Main %>% mutate(
   #G09
   BornOverseas_NS = (G09_BornOverseas$P_COB_NS_Tot / G09_BornOverseas$P_Tot_Tot)*100,
   
-  Born_UK = ((G09_BornOverseas$P_England_Tot + G09_BornOverseas$P_Wales_Tot + G09_BornOverseas$P_Scotland_Tot + G09_BornOverseas$P_Nthern_Ireland_Tot) / (G09_BornOverseas$P_Tot_Tot - G09_BornOverseas$P_COB_NS_Tot)) * 100,
+  Born_UK = ((G09_BornOverseas$P_England_Tot + G09_BornOverseas$P_Wales_Tot + G09_BornOverseas$P_Scotland_Tot + G09_BornOverseas$P_Nthern_Ireland_Tot) / (G09_BornOverseas$P_Tot_Tot)) * 100,
   
-  Born_MidEast = ((G09_BornOverseas$P_Afghanistan_Tot + G09_BornOverseas$P_Egypt_Tot + G09_BornOverseas$P_Iran_Tot + G09_BornOverseas$P_Lebanon_Tot + G09_BornOverseas$P_Turkey_Tot) / (G09_BornOverseas$P_Tot_Tot - G09_BornOverseas$P_COB_NS_Tot)) * 100,
+  Born_MidEast = ((G09_BornOverseas$P_Afghanistan_Tot + G09_BornOverseas$P_Egypt_Tot + G09_BornOverseas$P_Iran_Tot + G09_BornOverseas$P_Lebanon_Tot + G09_BornOverseas$P_Turkey_Tot) / (G09_BornOverseas$P_Tot_Tot)) * 100,
   
-  Born_SE_Europe = ((G09_BornOverseas$P_Bosnia_Herzegov_Tot + G09_BornOverseas$P_Croatia_Tot + G09_BornOverseas$P_Greece_Tot + G09_BornOverseas$P_FYROM_Tot + G09_BornOverseas$P_SE_Europe_nfd_Tot) / (G09_BornOverseas$P_Tot_Tot - G09_BornOverseas$P_COB_NS_Tot)) * 100,
+  Born_SE_Europe = ((G09_BornOverseas$P_Bosnia_Herzegov_Tot + G09_BornOverseas$P_Croatia_Tot + G09_BornOverseas$P_Greece_Tot + G09_BornOverseas$P_FYROM_Tot + G09_BornOverseas$P_SE_Europe_nfd_Tot) / (G09_BornOverseas$P_Tot_Tot)) * 100,
   
-  Born_Asia = ((G09_BornOverseas$P_Bangladesh_Tot + G09_BornOverseas$P_Cambodia_Tot + G09_BornOverseas$P_China_Tot + G09_BornOverseas$P_Hong_Kong_Tot + G09_BornOverseas$P_Indonesia_Tot + G09_BornOverseas$P_Indonesia_Tot + G09_BornOverseas$P_Japan_Tot + G09_BornOverseas$P_Korea_South_Tot + G09_BornOverseas$P_Malaysia_Tot + G09_BornOverseas$P_Nepal_Tot + G09_BornOverseas$P_Pakistan_Tot + G09_BornOverseas$P_Philippines_Tot + G09_BornOverseas$P_Singapore_Tot + G09_BornOverseas$P_Sri_Lanka_Tot + G09_BornOverseas$P_Thailand_Tot + G09_BornOverseas$P_Taiwan_Tot + G09_BornOverseas$P_Vietnam_Tot) / (G09_BornOverseas$P_Tot_Tot - G09_BornOverseas$P_COB_NS_Tot)) * 100,
+  Born_Asia = ((G09_BornOverseas$P_Bangladesh_Tot + G09_BornOverseas$P_Cambodia_Tot + G09_BornOverseas$P_China_Tot + G09_BornOverseas$P_Hong_Kong_Tot + G09_BornOverseas$P_Indonesia_Tot + G09_BornOverseas$P_Indonesia_Tot + G09_BornOverseas$P_Japan_Tot + G09_BornOverseas$P_Korea_South_Tot + G09_BornOverseas$P_Malaysia_Tot + G09_BornOverseas$P_Nepal_Tot + G09_BornOverseas$P_Pakistan_Tot + G09_BornOverseas$P_Philippines_Tot + G09_BornOverseas$P_Singapore_Tot + G09_BornOverseas$P_Sri_Lanka_Tot + G09_BornOverseas$P_Thailand_Tot + G09_BornOverseas$P_Taiwan_Tot + G09_BornOverseas$P_Vietnam_Tot) / (G09_BornOverseas$P_Tot_Tot)) * 100,
   
   #G13
   Language_NS = (G13D_LanguageHome$P_Tot_NS / G13D_LanguageHome$P_Tot_Tot)*100,
   
   #G14
-  Christianity = (G14_Religion$Christianity_Tot_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  Anglican = (G14_Religion$Christianity_Anglican_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  Catholic = (G14_Religion$Christianity_Catholic_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  Buddhism = (G14_Religion$Buddhism_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  Islam = (G14_Religion$Islam_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  Judaism = (G14_Religion$Judaism_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  OtherChrist = ((G14_Religion$Christianity_Tot_P - G14_Religion$Christianity_Anglican_P - G14_Religion$Christianity_Catholic_P)/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
-  NoReligion = (G14_Religion$SB_OSB_NRA_NR_P/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P))*100,
+  Christianity = (G14_Religion$Christianity_Tot_P/(G14_Religion$Tot_P))*100,
+  Anglican = (G14_Religion$Christianity_Anglican_P/(G14_Religion$Tot_P))*100,
+  Catholic = (G14_Religion$Christianity_Catholic_P/(G14_Religion$Tot_P))*100,
+  Buddhism = (G14_Religion$Buddhism_P/(G14_Religion$Tot_P))*100,
+  Islam = (G14_Religion$Islam_P/(G14_Religion$Tot_P))*100,
+  Judaism = (G14_Religion$Judaism_P/(G14_Religion$Tot_P))*100,
+  OtherChrist = ((G14_Religion$Christianity_Tot_P - G14_Religion$Christianity_Anglican_P - G14_Religion$Christianity_Catholic_P)/(G14_Religion$Tot_P))*100,
+  NoReligion = (G14_Religion$SB_OSB_NRA_NR_P/(G14_Religion$Tot_P))*100,
   Religion_NS = (G14_Religion$Religious_affiliation_ns_P/G14_Religion$Tot_P)*100,
   Other_NonChrist = 100 - NoReligion - Christianity,
-  #Other_NonChrist = (1- ((G14_Religion$Christianity_Tot_P - G14_Religion$SB_OSB_NRA_NR_P)/(G14_Religion$Tot_P - G14_Religion$Religious_affiliation_ns_P)))*100,
+  #Other_NonChrist = (1- ((G14_Religion$Christianity_Tot_P - G14_Religion$SB_OSB_NRA_NR_P)/(G14_Religion$Tot_P)))*100,
   
   #G15
   CurrentlyStudying = (G15_Study$Tot_P / Tot_P_P)*100, #of total population
   
   #G16
-  HighSchool = (G16A_HighSchool$P_Y12e_Tot/(G16B_HighSchool$P_Tot_Tot - G16B_HighSchool$P_Hghst_yr_schl_ns_Tot))*100,
+  HighSchool = (G16A_HighSchool$P_Y12e_Tot/(G16B_HighSchool$P_Tot_Tot))*100,
   HighSchool_NS = (G16B_HighSchool$P_Hghst_yr_schl_ns_Tot/G16B_HighSchool$P_Tot_Tot)*100, #of age appropriate population
   
   #G17C
   PersonalIncome_NS = (G17C_Income$P_PI_NS_ns_Tot / G17C_Income$P_Tot_Tot)*100,
   
   #G19
-  Volunteer = (G19_Volunteer$P_Tot_Volunteer / (G19_Volunteer$P_Tot_Tot - G19_Volunteer$P_Tot_Voluntary_work_ns))*100,
+  Volunteer = (G19_Volunteer$P_Tot_Volunteer / (G19_Volunteer$P_Tot_Tot))*100,
   Volunteer_NS = (G19_Volunteer$P_Tot_Voluntary_work_ns / G19_Volunteer$P_Tot_Tot)*100,
 
   #G25
@@ -151,16 +151,16 @@ new <- G1_Main %>% mutate(
   
   #G33
   Tenure_NS = (G33_Tenure$Ten_type_NS_Total / G33_Tenure$Total_Total)*100,
-  Owned = (G33_Tenure$O_OR_Total/(G33_Tenure$Total_Total - G33_Tenure$Ten_type_NS_Total))*100,
-  Mortgage = ((G33_Tenure$O_MTG_Total)/(G33_Tenure$Total_Total - G33_Tenure$Ten_type_NS_Total))*100,
-  Renting = (G33_Tenure$R_Tot_Total/(G33_Tenure$Total_Total - G33_Tenure$Ten_type_NS_Total))*100,
-  PublicHousing = (G33_Tenure$R_ST_h_auth_Total/(G33_Tenure$Total_Total - G33_Tenure$Ten_type_NS_Total))*100,
+  Owned = (G33_Tenure$O_OR_Total/(G33_Tenure$Total_Total))*100,
+  Mortgage = ((G33_Tenure$O_MTG_Total)/(G33_Tenure$Total_Total))*100,
+  Renting = (G33_Tenure$R_Tot_Total/(G33_Tenure$Total_Total))*100,
+  PublicHousing = (G33_Tenure$R_ST_h_auth_Total/(G33_Tenure$Total_Total))*100,
   
   #G36
   Rent_NS = (G36_Rent$Rent_ns_Tot / G36_Rent$Tot_Tot)*100,
   
   #G37
-  InternetAccess = (G37_Internet$IA_Total/(G37_Internet$Total_Total-G37_Internet$IC_not_stated_Total))*100,
+  InternetAccess = (G37_Internet$IA_Total/(G37_Internet$Total_Total))*100,
   InternetAccess_NS = (G37_Internet$IC_not_stated_Total / G37_Internet$Total_Total)*100,
   
   #G40
@@ -168,27 +168,26 @@ new <- G1_Main %>% mutate(
   LFParticipation = G40_Employ$Percnt_LabForc_prticipation_P,
   
   #G42
-  DiffAddress = (1 - (G42_Address$Sme_Usl_ad_5_yr_ago_as_2016_P/(G42_Address$Tot_P - G42_Address$N_stated_P)))*100,
+  DiffAddress = (1 - (G42_Address$Sme_Usl_ad_5_yr_ago_as_2016_P/(G42_Address$Tot_P)))*100,
   
   #G46B
-  Bachelor = (G46B_Uni$P_BachDeg_Total / (Population*(100 - Age00_04 - Age05_14)/100 - G46B_Uni$P_Lev_Edu_NS_Total))*100,
-  Postgraduate = (G46B_Uni$P_PGrad_Deg_Total / (Population*(100 - Age00_04 - Age05_14)/100 - G46B_Uni$P_Lev_Edu_NS_Total))*100,
-  DipCert = ((G46B_Uni$P_GradDip_and_GradCert_Total + G46B_Uni$P_AdvDip_and_Dip_Total + G46B_Uni$P_Cert_Lev_Tot_Total) /(Population*(100 - Age00_04 - Age05_14)/100 - G46B_Uni$P_Lev_Edu_NS_Total))*100,
+  BachelorAbv = ((G46B_Uni$P_BachDeg_Total + G46B_Uni$P_PGrad_Deg_Total + G46B_Uni$P_GradDip_and_GradCert_Total)/ (Population*(100 - Age00_04 - Age05_14)/100))*100,
+  DipCert = ((G46B_Uni$P_AdvDip_and_Dip_Total + G46B_Uni$P_Cert_Lev_Tot_Total) /(Population*(100 - Age00_04 - Age05_14)/100))*100,
   University_NS = ((G46B_Uni$P_Lev_Edu_IDes_Total + G46B_Uni$P_Lev_Edu_NS_Total) / (Population*(100 - Age00_04 - Age05_14)/100))*100,
   #Using the total population 15+ in the denominator, instead of the total given in the response
   
   #G51
-  Extractive = ((G51_Industry$P_Ag_For_Fshg_Tot + G51_Industry$P_Mining_Tot + G51_Industry$P_El_Gas_Wt_Waste_Tot) / (G51_Industry$P_Tot_Tot - G51_Industry$P_ID_NS_Tot)) * 100,
-  Transformative = ((G51_Industry$P_Constru_Tot + G51_Industry$P_Manufact_Tot) / (G51_Industry$P_Tot_Tot - G51_Industry$P_ID_NS_Tot)) * 100,
-  Distributive = ((G51_Industry$P_WhlesaleTde_Tot + G51_Industry$P_RetTde_Tot + G51_Industry$P_Trans_post_wrehsg_Tot) / (G51_Industry$P_Tot_Tot - G51_Industry$P_ID_NS_Tot)) * 100,
-  Finance = (G51_Industry$P_Fin_Insur_Tot / (G51_Industry$P_Tot_Tot - G51_Industry$P_ID_NS_Tot)) * 100,
-  SocialServ = ((G51_Industry$P_Educ_trng_Tot + G51_Industry$P_HlthCare_SocAs_Tot + G51_Industry$P_Art_recn_Tot) / (G51_Industry$P_Tot_Tot - G51_Industry$P_ID_NS_Tot)) * 100,
+  Extractive = ((G51_Industry$P_Ag_For_Fshg_Tot + G51_Industry$P_Mining_Tot + G51_Industry$P_El_Gas_Wt_Waste_Tot) / (G51_Industry$P_Tot_Tot)) * 100,
+  Transformative = ((G51_Industry$P_Constru_Tot + G51_Industry$P_Manufact_Tot) / (G51_Industry$P_Tot_Tot)) * 100,
+  Distributive = ((G51_Industry$P_WhlesaleTde_Tot + G51_Industry$P_RetTde_Tot + G51_Industry$P_Trans_post_wrehsg_Tot) / (G51_Industry$P_Tot_Tot)) * 100,
+  Finance = (G51_Industry$P_Fin_Insur_Tot / (G51_Industry$P_Tot_Tot)) * 100,
+  SocialServ = ((G51_Industry$P_Educ_trng_Tot + G51_Industry$P_HlthCare_SocAs_Tot + G51_Industry$P_Art_recn_Tot) / (G51_Industry$P_Tot_Tot)) * 100,
   
   #G57
-  ManagerAdminClericalSales = ((G57_Occupation$P_Tot_Managers + G57_Occupation$P_Tot_ClericalAdminis_W + G57_Occupation$P_Tot_Sales_W) / (G57_Occupation$P_Tot_Tot - G57_Occupation$P_Tot_Occu_ID_NS))*100,
-  Professional = (G57_Occupation$P_Tot_Professionals / (G57_Occupation$P_Tot_Tot - G57_Occupation$P_Tot_Occu_ID_NS))*100,
-  Tradesperson = (G57_Occupation$P_Tot_TechnicTrades_W / (G57_Occupation$P_Tot_Tot - G57_Occupation$P_Tot_Occu_ID_NS))*100,
-  Laborer = (G57_Occupation$P_Tot_Labourers / (G57_Occupation$P_Tot_Tot - G57_Occupation$P_Tot_Occu_ID_NS))*100,
+  ManagerAdminClericalSales = ((G57_Occupation$P_Tot_Managers + G57_Occupation$P_Tot_ClericalAdminis_W + G57_Occupation$P_Tot_Sales_W) / (G57_Occupation$P_Tot_Tot))*100,
+  Professional = (G57_Occupation$P_Tot_Professionals / (G57_Occupation$P_Tot_Tot))*100,
+  Tradesperson = (G57_Occupation$P_Tot_TechnicTrades_W / (G57_Occupation$P_Tot_Tot))*100,
+  Laborer = (G57_Occupation$P_Tot_Labourers / (G57_Occupation$P_Tot_Tot))*100,
   
   #Area
   Area = as.numeric(Area_sqkm$Area_sqkm),
