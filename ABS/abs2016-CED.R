@@ -233,7 +233,7 @@ abs2016 <- abs2016 %>%
   mutate(BornElsewhere = BornOverseas - Born_MidEast - Born_SE_Europe - Born_UK) %>% 
   select(-c(BornOverseas, Age15plus))
 
-save(abs2016, file = "./Clean/abs2016.rda")
+save(abs2016, file = "/Users/Jeremy/Documents/R/Data/Clean/abs2016.rda")
 
 
 ### ------------------------------------------------------ ###
