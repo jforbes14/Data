@@ -1,5 +1,8 @@
 # Polling place locations and results
 
+library(tidyverse)
+library(ggmap)
+
 # -------------------------------------
 
 # 2016
@@ -45,6 +48,18 @@ add6 <- left_join(add5 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Lat
 add7 <- left_join(add6 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
   pollplace_16 %>% select(PollingPlaceNm, PremisesNm, PremisesPostCode, Latitude, Longitude), by = c("PremisesNm", "PremisesPostCode", "PollingPlaceNm"))
 
+# Google Maps to get remaining geocodes
+
+get_geos <- add7 %>% 
+  filter(is.na(Latitude)) %>% 
+  mutate(address = gsub(" NA ", " ", paste(PremisesNm, PremisesAddress1, PremisesAddress2, 
+    PremisesAddress3, PremisesSuburb, PremisesStateAb, PremisesPostCode, "AUSTRALIA"))) %>% 
+  mutate_geocode(address) %>% 
+  rename(Latitude = lat, Longitude = lon)
+
+get_geos <- get_geos %>% 
+  rename(Latitude = lat, Longitude = lon)
+
 # Now combine into (almost) complete dataset
 
 pollplace_04 <- pollplace_04_blank %>% filter(!is.na(Longitude)) %>% 
@@ -54,25 +69,13 @@ pollplace_04 <- pollplace_04_blank %>% filter(!is.na(Longitude)) %>%
   bind_rows(add4 %>% filter(!is.na(Longitude))) %>% 
   bind_rows(add5 %>% filter(!is.na(Longitude))) %>% 
   bind_rows(add6 %>% filter(!is.na(Longitude))) %>% 
-  bind_rows(add7)
+  bind_rows(add7 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(get_geos) %>% 
+  select(-address)
 
-# For the 600 without a location, an option is to default to the postcode lat and long
-# http://www.corra.com.au/downloads/Australian_Post_Codes_Lat_Lon.zip
+# Export
 
-#postcodes <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/Australian_Post_Codes_Lat_Lon.csv")
-
-#postcodes <- postcodes[match(unique(postcodes$postcode), postcodes$postcode),]
-
-#add8 <- left_join(add7 %>% filter(is.na(Longitude)) %>% 
-#    select(-c(Longitude, Latitude)) %>% rename(postcode = PremisesPostCode),
-#  postcodes %>% rename(Latitude = lat, Longitude = lon) 
-#  %>% select(postcode, Latitude, Longitude), by = "postcode") %>% 
-#  mutate(postcode = "Yes")
-
-
-# 2001
-# Taken from https://pappubahry.com/electionmaps/#download
-pollplace_01 <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/DB-electionmaps/booths_data/2001.csv")
+#write_csv(pollplace_04, "PollingBooth2004GeoCodes.csv")
 
 # -------------------------------------
 
@@ -126,6 +129,8 @@ chr_upper <- function(df) {
 # Download polling place division of preferences, two party preferred and two candidate preferred (where available)
 # In long format, where each candidate has their own row. Alternative is wide format with code in next section.
 
+# ------------------------------------------------------------------------------------------
+
 # 2016
 
 tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
@@ -148,7 +153,9 @@ fp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-20499-ACT.csv", skip = 1)) %>% 
   relabel_parties() %>% reabbrev_parties()  %>% 
   chr_upper()
-  
+
+# ------------------------------------------------------------------------------------------
+
 # 2013
 
 tcp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-17496.csv", skip = 1) %>% 
@@ -172,6 +179,8 @@ fp_pp13 <- read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/17496/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-17496-ACT.csv", skip = 1))  %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
   chr_upper() 
+
+# ------------------------------------------------------------------------------------------
 
 # 2010
 
@@ -197,6 +206,8 @@ fp_pp10 <- read_csv("https://results.aec.gov.au/15508/Website/Downloads/HouseSta
   relabel_parties() %>% reabbrev_parties() %>% 
   chr_upper() 
 
+# ------------------------------------------------------------------------------------------
+
 # 2007
 
 tcp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-13745.csv", skip = 1) %>% 
@@ -220,6 +231,8 @@ fp_pp07 <- read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseSta
   bind_rows(read_csv("https://results.aec.gov.au/13745/Website/Downloads/HouseStateFirstPrefsByPollingPlaceDownload-13745-ACT.csv", skip = 1)) %>% 
   relabel_parties() %>% reabbrev_parties() %>% 
   chr_upper()
+
+# ------------------------------------------------------------------------------------------
 
 # 2004
 
@@ -249,52 +262,134 @@ fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseSta
   select(-SittingMemberFl) %>% 
   chr_upper()
 
+# ------------------------------------------------------------------------------------------
+
 # 2001
 
-# Sourced from David Barry (https://pappubahry.com/electionmaps/)
+# Get locations of polling places (extract address from first preferences)
 
-votes_pp01 <- read_csv("/Users/Jeremy/Documents/R/Data/Raw/pollingplace2001.csv") %>% 
-  mutate(ALP_prim = replace_na(ALP_prim, 0), 
-    GRN_prim = replace_na(GRN_prim, 0), 
-    IND_prim = replace_na(IND_prim, 0), 
-    LP_prim = replace_na(LP_prim, 0), 
-    NP_prim = replace_na(NP_prim, 0), 
-    HAN_prim = replace_na(HAN_prim, 0)) %>% 
-  mutate(LNP = LP_prim + NP_prim) %>% 
-  select(-c(LP_prim, NP_prim, DEM_prim, TCP_1, TCP_2)) %>% 
-  rename(StateAb = State, DivisionNm = Seat,PollingPlace = Booth, 
-    ALP = ALP_prim, ON = HAN_prim, IND = IND_prim, GRN = GRN_prim,
-    Latitude = Lat, Longitude = Long, TotalVotes = Formal_votes) %>% 
-  mutate(Other = round(100 - ALP - LNP - GRN - IND, 2)) %>% 
-  chr_upper()
+votes <- read_delim("AEC/import/hppdop.txt", delim = ";")
+candidates <- read_delim("AEC/import/hcands.txt", delim = ";")
 
-fp_pp01 <- votes_pp01 %>% 
-  select(-c(ALP_2PP, LNP_2PP)) %>% 
-  chr_upper()
+all <- left_join(votes, candidates, by = c("State", "Division", "Ballot Position"))
 
-tpp_pp01 <- votes_pp01 %>% 
-  select(-c(ALP, LNP, GRN, Other, IND, ON)) %>% 
-  rename(ALP_Percent = ALP_2PP, LNP_Percent = LNP_2PP) %>% 
-  mutate(ALP_Votes = TotalVotes * ALP_Percent / 100, LNP_Votes = TotalVotes * LNP_Percent / 100) %>% 
-  chr_upper()
+firstpref <- all %>% 
+  filter(Count == 1) %>% 
+  dplyr::select(-c(`Elected Swing`, `Exhausted Transfer`, Exhausted, `Vote Percent`, Swing, Vote.y, `Vote Distributed`, Count)) %>% 
+  mutate(PollingPlace = gsub("\\s*\\([^\\)]+\\)","",as.character(`Polling Place`) %>% toupper()),
+    PollingPlaceBracket = `Polling Place` %>% toupper(),
+    Division = toupper(Division),
+    Elected = ifelse(is.na(Member), "N", "Y")) %>% 
+  rename(Vote = Vote.x, StateAb = State, DivisionNm = Division)
 
-# -------------------------------------
+# Get coordinates from other years
+# PollingPlace format varies across years
 
-# To change to WIDE format
-# Independents are grouped together, and minor parties are lumped into "Other"
+locations <- firstpref %>% 
+  select(PollingPlace, PollingPlaceBracket, DivisionNm, StateAb) %>% 
+  group_by(PollingPlace, PollingPlaceBracket, DivisionNm, StateAb) %>% 
+  unique() %>% 
+  ungroup()
 
-#tcp_pp16 <- read_csv("https://results.aec.gov.au/20499/Website/Downloads/HouseTcpByCandidateByPollingPlaceDownload-20499.csv", skip = 1) %>% 
-#  group_parties() %>% 
-#  select(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb, OrdinaryVotes) %>% 
-#  group_by(StateAb, DivisionID, DivisionNm, PollingPlaceID, PollingPlace, PartyAb) %>% 
-#  summarise(TCP = sum(OrdinaryVotes)) %>% 
-#  spread(PartyAb, TCP) %>%
-#  mutate(ALP = replace_na(ALP, 0), 
-#    GRN = replace_na(GRN, 0), 
-#    IND = replace_na(IND, 0), 
-#    LNP = replace_na(LNP, 0), 
-#    ON = replace_na(ON, 0), 
-#    Other = replace_na(Other, 0))
+pollplace_01_start <- locations %>% left_join(
+  fp_pp04 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(),
+  by = c("StateAb", "DivisionNm", "PollingPlaceBracket" = "PollingPlace"))
+
+add1 <- left_join(pollplace_01_start %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
+  fp_pp07 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(), by = c("StateAb", "DivisionNm", "PollingPlaceBracket" = "PollingPlace"))
+
+add2 <- left_join(add1 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
+  fp_pp10 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(), by = c("StateAb", "DivisionNm", "PollingPlaceBracket" = "PollingPlace"))
+
+add3 <- left_join(add2 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
+  fp_pp13 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(), by = c("StateAb", "DivisionNm", "PollingPlace"))
+
+add4 <- left_join(add3 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)),
+  fp_pp16 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(), by = c("StateAb", "DivisionNm", "PollingPlace"))
+
+# Checking for matches with PPVC suffix
+
+add_ppvc <- add4 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)) %>% 
+  mutate(address = paste(PollingPlace, DivisionNm, StateAb, "AUSTRALIA"),
+    match = paste(PollingPlace, DivisionNm, "PPVC")) %>%
+  unique()
+
+add5 <- left_join(add_ppvc, fp_pp10 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(),
+  by = c("StateAb", "DivisionNm", "match" = "PollingPlace"))
+
+add6 <- left_join(add5 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)), 
+  fp_pp13 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(),
+  by = c("StateAb", "DivisionNm", "match" = "PollingPlace"))
+
+add7 <- left_join(add6 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)), 
+  fp_pp16 %>% select(PollingPlace, DivisionNm, StateAb, Latitude, Longitude) %>% unique(),
+  by = c("StateAb", "DivisionNm", "match" = "PollingPlace"))
+
+# Remaining, excluding special votes
+
+remain <- add7 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)) %>% 
+  filter(!PollingPlace %in% c("ABSENT", "POSTAL", "PRE POLL", "PROVISIONAL", "DIVISION SUMMARY"),
+    !grepl("SPECIAL", PollingPlace)) %>%
+  mutate(address = paste(PollingPlace, StateAb, "AUSTRALIA")) 
+
+special_votes <- add7 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)) %>% 
+  filter(PollingPlace %in% c("ABSENT", "POSTAL", "PRE POLL", "PROVISIONAL", "DIVISION SUMMARY"))
+
+special_place <- add7 %>% filter(is.na(Longitude)) %>% select(-c(Longitude, Latitude)) %>% 
+  filter(grepl("SPECIAL", PollingPlace))
+
+# ------------------------------------------------------------------------------------------
+
+# Load up the ggmap library (latest version from github)
+
+# Google API
+# Run GoogleAPI.R
+# register_google(key = "xxx")
+
+# Search for geocodes
+# This is imperfect - the remaining 930 polling places may not be accurate
+remain <- remain %>% 
+  mutate_geocode(address) %>% 
+  rename(Latitude = lat, Longitude = lon)
+
+my_geos <- data.frame(Longitude = remain$Longitude, Latitude = remain$Latitude)
+
+# Combine
+
+pollplace_01 <- pollplace_01_start %>% filter(!is.na(Longitude)) %>% 
+  bind_rows(add1 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add2 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add3 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add4 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add5 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add6 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(add7 %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(remain %>% filter(!is.na(Longitude))) %>% 
+  bind_rows(special_votes) %>% bind_rows(special_place) %>% 
+  select(-c(address, match, PollingPlaceBracket))
+
+# First preference
+
+fp_pp01 <- firstpref %>% 
+  left_join(pollplace_01, by = c("StateAb", "PollingPlace", "DivisionNm")) %>% 
+  separate(Candidate, c("Surname", "GivenNm"), ", ") %>% 
+  mutate(GivenNm = toupper(GivenNm)) %>% 
+  rename(BallotPosition = `Ballot Position`, OrdinaryVotes = Vote, PartyAb = Party) %>% 
+  select(StateAb,  DivisionNm, PollingPlace, Surname, GivenNm, BallotPosition, PartyAb, Elected, OrdinaryVotes, Latitude, Longitude)
+
+# Two party preferred
+
+tpp_pp01 <- read_delim("AEC/import/htppbypp.txt", delim = ";") %>% 
+  mutate(DivisionNm = toupper(Division), 
+    PollingPlace = gsub("\\s*\\([^\\)]+\\)", "", as.character(`Polling Place`) %>% toupper())) %>% 
+  select(-c(Division, `Polling Place`)) %>% 
+  left_join(pollplace_01, by = c("PollingPlace", "DivisionNm")) %>% 
+  rename(ALP_Votes = `ALP TPP Vote`, LNP_Votes = `Coalition TPP Vote`, 
+    ALP_Percent = `ALP TPP Pc`, Swing = `ALP Swing`) %>% 
+  mutate(TotalVotes = ALP_Votes + LNP_Votes, LNP_Percent = 100 - ALP_Percent) %>% 
+  select(StateAb, DivisionNm, PollingPlace, LNP_Votes, LNP_Percent, ALP_Votes, 
+    ALP_Percent, TotalVotes, Swing, Latitude, Longitude)
+
 
 # -------------------------------------
 
