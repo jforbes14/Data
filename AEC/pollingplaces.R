@@ -1,5 +1,10 @@
 # Polling place locations and results
 
+# For 2001 election data, download the folder in the link: https://www.aec.gov.au/About_AEC/Publications/statistics/files/aec-2001-election-statistics.zip
+# Change the directory in this code as required (2001 section only).
+
+# -------------------------------------
+
 library(tidyverse)
 library(ggmap)
 
@@ -268,8 +273,8 @@ fp_pp04 <- read_csv("https://results.aec.gov.au/12246/results/Downloads/HouseSta
 
 # Get locations of polling places (extract address from first preferences)
 
-votes <- read_delim("AEC/import/hppdop.txt", delim = ";")
-candidates <- read_delim("AEC/import/hcands.txt", delim = ";")
+votes <- read_delim("/Users/Jeremy/Downloads/aec-2001-election-statistics/data/import/hppdop.txt", delim = ";")
+candidates <- read_delim("/Users/Jeremy/Downloads/aec-2001-election-statistics/data/import/hcands.txt", delim = ";")
 
 all <- left_join(votes, candidates, by = c("State", "Division", "Ballot Position"))
 
@@ -379,7 +384,7 @@ fp_pp01 <- firstpref %>%
 
 # Two party preferred
 
-tpp_pp01 <- read_delim("AEC/import/htppbypp.txt", delim = ";") %>% 
+tpp_pp01 <- read_delim("/Users/Jeremy/Downloads/aec-2001-election-statistics/data/import/htppbypp.txt", delim = ";") %>% 
   mutate(DivisionNm = toupper(Division), 
     PollingPlace = gsub("\\s*\\([^\\)]+\\)", "", as.character(`Polling Place`) %>% toupper())) %>% 
   select(-c(Division, `Polling Place`)) %>% 
